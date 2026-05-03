@@ -1,51 +1,61 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { NextResponse } from "next/server"
 
-export async function GET() {
-  const apiKey = process.env.GOOGLE_API_KEY
-
-  if (!apiKey) {
-    return NextResponse.json({ error: "GOOGLE_API_KEY not configured" }, { status: 500 })
-  }
-
+export async function POST(req: Request) {
   try {
-    // Fetch models list directly from the API
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-    )
+    const apiKey = process.env.GOOGLE_API_KEY
 
-    if (!response.ok) {
-      const error = await response.json()
-      return NextResponse.json({ error: error.error?.message || "API error" }, { status: response.status })
+    if (!apiKey) {
+      return NextResponse.json({ error: "GOOGLE_API_KEY not configured" }, { status: 500 })
     }
 
-    const data = await response.json()
-    
-    // Filter and format models that support generateContent
-    const models = data.models?.map((model: {
-      name: string
-      displayName: string
-      supportedGenerationMethods: string[]
-      description?: string
-    }) => ({
-      name: model.name,
-      displayName: model.displayName,
-      supportedMethods: model.supportedGenerationMethods,
-      supportsGenerateContent: model.supportedGenerationMethods?.includes("generateContent"),
-    })) || []
+    const { error, stackTrace } = await req.json()
 
-    // Sort by whether they support generateContent
-    const generateContentModels = models.filter((m: { supportsGenerateContent: boolean }) => m.supportsGenerateContent)
-    const otherModels = models.filter((m: { supportsGenerateContent: boolean }) => !m.supportsGenerateContent)
+    if (!error) {
+      return NextResponse.json({ error: "No error data provided" }, { status: 400 })
+    }
 
-    return NextResponse.json({
-      total: models.length,
-      generateContentModels: generateContentModels.length,
-      models: [...generateContentModels, ...otherModels],
+    const genAI = new GoogleGenerativeAI(apiKey)
+
+    const model = genAI.getGenerativeModel({
+      model: "gemini-pro", // ✅ stable model
     })
-  } catch (error) {
+
+    const prompt = `
+You are a senior DevOps engineer.
+
+Analyze this production error deeply.
+
+Error:
+${error}
+
+Stack Trace:
+${stackTrace || "Not available"}
+
+Provide detailed structured output:
+
+Problem:
+- Explain what the error means internally
+
+Cause:
+- Root cause analysis (code/system level)
+
+Fix:
+- Step-by-step solution (include code/config if needed)
+
+Prevention:
+- Monitoring, alerts, and best practices
+`
+
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    const text = response.text()
+
+    return NextResponse.json({ result: text })
+
+  } catch (err) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch models" },
+      { error: err instanceof Error ? err.message : "AI request failed" },
       { status: 500 }
     )
   }
