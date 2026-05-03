@@ -202,7 +202,7 @@ export function IssueDetailsPanel({
             <ExternalLink className="size-3.5" />
           </a>
         </div>
-      </ScrollArea>
+      </div>
     </div>
   )
 }
