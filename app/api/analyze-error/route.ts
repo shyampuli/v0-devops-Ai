@@ -28,13 +28,9 @@ export async function POST(req: Request) {
     // Initialize Google Generative AI with official SDK
     const genAI = new GoogleGenerativeAI(apiKey)
     
-    // Use gemini-1.5-flash-latest as specified
+    // Use gemini-1.5-flash (current supported model)
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash-latest",
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 2000,
-      },
+      model: "gemini-1.5-flash",
     })
 
     const systemPrompt = `You are a senior DevOps engineer and SRE.
