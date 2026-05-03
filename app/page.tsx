@@ -18,6 +18,7 @@ const SENTRY_ORG = "tcs-goh"
 interface User {
   email: string
   name: string
+  provider?: string
 }
 
 export default function DashboardPage() {

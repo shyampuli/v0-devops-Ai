@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
-import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react"
+import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 // Dynamically import DarkVeil to avoid SSR issues
@@ -12,16 +12,18 @@ const DarkVeil = dynamic(() => import("@/components/effects/dark-veil"), {
 })
 
 interface LoginPageProps {
-  onLogin: (user: { email: string; name: string }) => void
+  onLogin: (user: { email: string; name: string; provider?: string }) => void
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({})
   const [isSignUp, setIsSignUp] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -29,16 +31,21 @@ export function LoginPage({ onLogin }: LoginPageProps) {
   }
 
   const handleGoogleLogin = async () => {
-    setIsLoading(true)
+    setIsGoogleLoading(true)
     setErrors({})
     
-    // Simulate Google OAuth delay
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // Simulate Google OAuth delay (1-1.5 sec as specified)
+    await new Promise(resolve => setTimeout(resolve, 1200))
     
-    // Mock successful Google login
+    // Show success animation
+    setShowSuccess(true)
+    await new Promise(resolve => setTimeout(resolve, 800))
+    
+    // Mock successful Google login with provider
     onLogin({
-      email: "demo@google.com",
-      name: "Google User"
+      email: "user@gmail.com",
+      name: "Google User",
+      provider: "google"
     })
   }
 
@@ -69,12 +76,17 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     setIsLoading(true)
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1200))
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Show success animation before redirect
+    setShowSuccess(true)
+    await new Promise(resolve => setTimeout(resolve, 800))
 
     // Mock authentication - accept any valid email/password combo
     onLogin({
       email: email,
-      name: email.split("@")[0]
+      name: email.split("@")[0],
+      provider: "email"
     })
   }
 
@@ -114,9 +126,9 @@ export function LoginPage({ onLogin }: LoginPageProps) {
             <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 shadow-lg shadow-blue-500/25">
               <span className="text-2xl font-bold text-white">D</span>
             </div>
-            <h1 className="text-2xl font-bold text-white">Welcome back</h1>
+            <h1 className="text-2xl font-bold text-white">Welcome to DevOps AI</h1>
             <p className="mt-2 text-sm text-white/60">
-              {isSignUp ? "Create an account to get started" : "Sign in to continue"}
+              {isSignUp ? "Create an account to get started" : "Monitor, analyze, and fix production issues faster"}
             </p>
           </div>
 
@@ -125,11 +137,13 @@ export function LoginPage({ onLogin }: LoginPageProps) {
             {/* Google Login */}
             <button
               onClick={handleGoogleLogin}
-              disabled={isLoading}
-              className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isLoading || isGoogleLoading || showSuccess}
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm font-medium text-white transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isLoading ? (
+              {isGoogleLoading ? (
                 <Loader2 className="size-5 animate-spin" />
+              ) : showSuccess ? (
+                <CheckCircle2 className="size-5 text-green-400" />
               ) : (
                 <svg className="size-5" viewBox="0 0 24 24">
                   <path
@@ -241,10 +255,15 @@ export function LoginPage({ onLogin }: LoginPageProps) {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={isLoading || isGoogleLoading || showSuccess || !email.trim() || !password.trim()}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 py-3.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isLoading ? (
+                {showSuccess ? (
+                  <>
+                    <CheckCircle2 className="size-4 text-white" />
+                    Success
+                  </>
+                ) : isLoading ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (
                   isSignUp ? "Create Account" : "Sign In"
