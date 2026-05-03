@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai"
+import { GoogleGenAI } from "@google/genai"
 
 export async function POST(req: Request) {
   try {
@@ -25,13 +25,8 @@ export async function POST(req: Request) {
       return Response.json({ error: "GOOGLE_API_KEY not configured" }, { status: 500 })
     }
 
-    // Initialize Google Generative AI with official SDK
-    const genAI = new GoogleGenerativeAI(apiKey)
-    
-    // Use gemini-1.5-flash (current supported model)
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-    })
+    // Initialize with new @google/genai SDK
+    const ai = new GoogleGenAI({ apiKey })
 
     const systemPrompt = `You are a senior DevOps engineer and SRE.
 
@@ -74,20 +69,15 @@ ${stackTrace}
 
 Provide detailed technical analysis.`
 
-    // Combine system and user prompts for Gemini
-    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`
+    // Call generateContent with gemini-2.5-flash
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `${systemPrompt}\n\n${userPrompt}`,
+    })
 
-    // Call generateContent with the official SDK
-    const result = await model.generateContent(fullPrompt)
-    const response = result.response
-    const text = response.text()
+    const text = response.text
 
     if (!text || text.trim() === "") {
-      // Check for safety blocking
-      const candidate = response.candidates?.[0]
-      if (candidate?.finishReason === "SAFETY") {
-        return Response.json({ error: "Content blocked by safety filters" }, { status: 400 })
-      }
       return Response.json({ error: "Empty response from Gemini" }, { status: 500 })
     }
 
