@@ -64,27 +64,31 @@ function AnalysisSection({
   const styles = {
     problem: {
       bg: "bg-red-50",
-      border: "border-red-100",
-      icon: "text-red-500",
+      border: "border-red-200",
+      icon: "text-red-600",
       title: "text-red-900",
+      body: "text-gray-900",
     },
     cause: {
       bg: "bg-amber-50",
-      border: "border-amber-100",
+      border: "border-amber-200",
       icon: "text-amber-600",
       title: "text-amber-900",
+      body: "text-gray-900",
     },
     fix: {
       bg: "bg-emerald-50",
-      border: "border-emerald-100",
+      border: "border-emerald-200",
       icon: "text-emerald-600",
       title: "text-emerald-900",
+      body: "text-gray-900",
     },
     prevention: {
       bg: "bg-blue-50",
-      border: "border-blue-100",
-      icon: "text-blue-500",
+      border: "border-blue-200",
+      icon: "text-blue-600",
       title: "text-blue-900",
+      body: "text-gray-900",
     },
   }
 
@@ -93,10 +97,10 @@ function AnalysisSection({
   return (
     <div className={cn("rounded-xl border p-5", style.bg, style.border)}>
       <div className="mb-3 flex items-center gap-2">
-        <Icon className={cn("size-4 shrink-0", style.icon)} />
-        <h3 className={cn("text-sm font-semibold", style.title)}>{title}</h3>
+        <Icon className={cn("size-5 shrink-0", style.icon)} />
+        <h3 className={cn("text-sm font-bold", style.title)}>{title}</h3>
       </div>
-      <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
+      <div className={cn("whitespace-pre-wrap break-words text-sm leading-relaxed", style.body)}>
         {content}
       </div>
     </div>
