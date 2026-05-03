@@ -43,7 +43,7 @@ export function LoginPage() {
           {/* Header */}
           <div className="px-8 pb-4 pt-10 text-center">
             {/* Logo */}
-            <div className="mx-auto mb-6">
+            <div className="mx-auto mb-6 flex justify-center">
               <Image
                 src="/images/devops-ai-logo.png"
                 alt="DevOps AI"
