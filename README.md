@@ -61,7 +61,7 @@ This ensures:
 - **UI:** v0 (Vercel AI UI builder)  
 - **Auth:** Google OAuth (NextAuth)  
 - **Monitoring:** Sentry + MCP  
-- **AI:** LLM (Gemini / OpenAI)  
+- **AI:** LLM (Gemini)  
 
 
 ## Built with v0
