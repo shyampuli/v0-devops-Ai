@@ -76,7 +76,7 @@ export function LogsViewer({
         ) : (
           <div className="flex h-full items-center justify-center p-8">
             <p className="text-sm text-muted-foreground">
-              Select a deployment to view logs
+              Select an issue to view details
             </p>
           </div>
         )}

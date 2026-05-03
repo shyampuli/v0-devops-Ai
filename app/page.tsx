@@ -1,127 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
-  DeploymentsList,
-  type Deployment,
-} from "@/components/dashboard/deployments-list"
+  SentryIssuesList,
+  type SentryIssue,
+} from "@/components/dashboard/sentry-issues-list"
 import { LogsViewer } from "@/components/dashboard/logs-viewer"
 import { AIAssistantPanel } from "@/components/dashboard/ai-assistant-panel"
+import { RefreshCw } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-// Sample deployment data
-const sampleDeployments: Deployment[] = [
-  {
-    id: "1",
-    name: "production-api-v2.3.1",
-    status: "success",
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-    logs: [
-      "Starting deployment...",
-      "Installing dependencies...",
-      "Building application...",
-      "Running tests...",
-      "All tests passed",
-      "Deploying to production...",
-      "Deployment successful",
-    ],
-  },
-  {
-    id: "2",
-    name: "staging-frontend-fix",
-    status: "failed",
-    timestamp: new Date(Date.now() - 1000 * 60 * 30),
-    logs: [
-      "Starting deployment...",
-      "Installing dependencies...",
-      "Building application...",
-      "ERROR: Module not found: Cannot resolve 'react-query'",
-      "ERROR: Build failed with exit code 1",
-      "Failed to compile",
-      "Deployment failed",
-    ],
-  },
-  {
-    id: "3",
-    name: "backend-hotfix-auth",
-    status: "failed",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    logs: [
-      "Starting deployment...",
-      "Installing dependencies...",
-      "Building application...",
-      "Running tests...",
-      "FATAL: Connection to database failed",
-      "ERROR: Unable to establish connection to PostgreSQL",
-      "Exception: TimeoutError after 30000ms",
-      "Deployment aborted",
-    ],
-  },
-  {
-    id: "4",
-    name: "docs-update-v1.2",
-    status: "success",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5),
-    logs: [
-      "Starting deployment...",
-      "Building documentation...",
-      "Generating static pages...",
-      "Optimizing images...",
-      "Deployment successful",
-    ],
-  },
-  {
-    id: "5",
-    name: "api-rate-limiting",
-    status: "success",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    logs: [
-      "Starting deployment...",
-      "Installing dependencies...",
-      "Building application...",
-      "Running integration tests...",
-      "All 47 tests passed",
-      "Deploying to production...",
-      "Health check passed",
-      "Deployment successful",
-    ],
-  },
-]
+// Sentry organization config
+const SENTRY_ORG = "tcs-goh"
 
 // Simulated AI responses for different error types
-const aiResponses: Record<string, string> = {
-  "2": `## Issue Detected
-
-**Missing Dependency: react-query**
-
-The build failed because the 'react-query' package is not installed or not properly listed in your dependencies.
-
-## Suggested Fix
-
-1. Install the package:
-   \`\`\`bash
-   npm install @tanstack/react-query
-   \`\`\`
-
-2. Update your imports (react-query was renamed to @tanstack/react-query):
-   \`\`\`javascript
-   // Before
-   import { useQuery } from 'react-query'
-   
-   // After
-   import { useQuery } from '@tanstack/react-query'
-   \`\`\`
-
-3. Ensure it's listed in package.json dependencies
-
-## Additional Notes
-- The package was renamed in v4. Make sure to update all imports across your codebase.
-- Consider running \`npm ls react-query\` to check for version conflicts.`,
-
-  "3": `## Issue Detected
+function generateAIResponse(issue: SentryIssue): string {
+  const title = issue.title.toLowerCase()
+  
+  if (title.includes("database") || title.includes("connection")) {
+    return `## Issue Detected
 
 **Database Connection Failure**
 
-The deployment failed because the application couldn't establish a connection to the PostgreSQL database within the timeout period.
+The error "${issue.title}" indicates a database connectivity issue in \`${issue.culprit}\`.
 
 ## Suggested Fix
 
@@ -146,22 +47,117 @@ The deployment failed because the application couldn't establish a connection to
 
 ## Additional Notes
 - Check database server status in your cloud provider dashboard
-- Consider implementing connection retry logic with exponential backoff`,
+- Consider implementing connection retry logic with exponential backoff
+- First seen: ${new Date(issue.firstSeen).toLocaleString()}
+- Events: ${issue.count}`
+  }
+
+  if (title.includes("module") || title.includes("import") || title.includes("cannot find")) {
+    return `## Issue Detected
+
+**Missing Module or Import Error**
+
+The error "${issue.title}" suggests a missing dependency or incorrect import path.
+
+## Suggested Fix
+
+1. **Check package.json**
+   - Verify the required package is listed in dependencies
+   - Run \`npm install\` or \`yarn install\` to ensure all packages are installed
+
+2. **Update Import Path**
+   \`\`\`javascript
+   // Check if the module path is correct
+   // Common issues: typos, case sensitivity, missing file extensions
+   \`\`\`
+
+3. **Clear Cache**
+   \`\`\`bash
+   rm -rf node_modules
+   rm package-lock.json
+   npm install
+   \`\`\`
+
+## Additional Notes
+- Location: \`${issue.culprit}\`
+- Events: ${issue.count}
+- First seen: ${new Date(issue.firstSeen).toLocaleString()}`
+  }
+
+  return `## Issue Analysis
+
+**${issue.title}**
+
+This error was detected in \`${issue.culprit}\`.
+
+## Details
+
+- **Severity**: ${issue.level}
+- **Status**: ${issue.status}
+- **Events**: ${issue.count}
+- **Users Affected**: ${issue.userCount}
+- **First Seen**: ${new Date(issue.firstSeen).toLocaleString()}
+- **Last Seen**: ${new Date(issue.lastSeen).toLocaleString()}
+
+## Suggested Investigation
+
+1. **Review the stack trace** in Sentry for the exact line causing the error
+2. **Check recent deployments** that may have introduced this issue
+3. **Review the affected code path** in \`${issue.culprit}\`
+4. **Add error handling** to gracefully handle edge cases
+
+## View in Sentry
+
+[Open in Sentry](${issue.permalink})`
 }
 
 export default function DashboardPage() {
-  const [selectedDeployment, setSelectedDeployment] =
-    useState<Deployment | null>(null)
+  const [issues, setIssues] = useState<SentryIssue[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedIssue, setSelectedIssue] = useState<SentryIssue | null>(null)
   const [aiContent, setAiContent] = useState<string | null>(null)
   const [isAiLoading, setIsAiLoading] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const handleSelectDeployment = (deployment: Deployment) => {
-    setSelectedDeployment(deployment)
+  const fetchIssues = useCallback(async (showRefresh = false) => {
+    if (showRefresh) {
+      setIsRefreshing(true)
+    } else {
+      setIsLoading(true)
+    }
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/sentry/issues?org=${SENTRY_ORG}`)
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Failed to fetch issues: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setIssues(data.issues || [])
+    } catch (err) {
+      console.error("[v0] Failed to fetch Sentry issues:", err)
+      setError(err instanceof Error ? err.message : "Failed to fetch issues")
+    } finally {
+      setIsLoading(false)
+      setIsRefreshing(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchIssues()
+  }, [fetchIssues])
+
+  const handleSelectIssue = (issue: SentryIssue) => {
+    setSelectedIssue(issue)
     setAiContent(null)
   }
 
   const handleFixWithAI = async () => {
-    if (!selectedDeployment) return
+    if (!selectedIssue) return
 
     setIsAiLoading(true)
     setAiContent(null)
@@ -169,16 +165,28 @@ export default function DashboardPage() {
     // Simulate AI processing delay
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
-    const response =
-      aiResponses[selectedDeployment.id] ||
-      `## Analysis Complete
-
-No specific fix suggestions available for this deployment. 
-
-Please review the error logs manually or contact the DevOps team for assistance.`
-
+    const response = generateAIResponse(selectedIssue)
     setAiContent(response)
     setIsAiLoading(false)
+  }
+
+  // Generate logs from issue data
+  const generateLogsFromIssue = (issue: SentryIssue | null): string[] => {
+    if (!issue) return []
+    
+    return [
+      `[${issue.level.toUpperCase()}] ${issue.title}`,
+      `Culprit: ${issue.culprit}`,
+      `Issue ID: ${issue.shortId}`,
+      `Status: ${issue.status}`,
+      ``,
+      `First seen: ${new Date(issue.firstSeen).toLocaleString()}`,
+      `Last seen: ${new Date(issue.lastSeen).toLocaleString()}`,
+      `Total events: ${issue.count}`,
+      `Users affected: ${issue.userCount}`,
+      ``,
+      `View in Sentry: ${issue.permalink}`,
+    ]
   }
 
   return (
@@ -193,29 +201,39 @@ Please review the error logs manually or contact the DevOps team for assistance.
             DevOps Dashboard
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <span className="text-sm text-muted-foreground">
-            {sampleDeployments.length} deployments
+            {SENTRY_ORG}
           </span>
+          <button
+            onClick={() => fetchIssues(true)}
+            disabled={isRefreshing}
+            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
+          >
+            <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
+            Refresh
+          </button>
         </div>
       </header>
 
       {/* Main Content - 3 Panel Layout */}
       <div className="grid flex-1 grid-cols-[280px_1fr_320px] overflow-hidden">
-        {/* Left Panel - Deployments List */}
+        {/* Left Panel - Sentry Issues List */}
         <div className="border-r border-border">
-          <DeploymentsList
-            deployments={sampleDeployments}
-            selectedId={selectedDeployment?.id ?? null}
-            onSelect={handleSelectDeployment}
+          <SentryIssuesList
+            issues={issues}
+            selectedId={selectedIssue?.id ?? null}
+            onSelect={handleSelectIssue}
+            isLoading={isLoading}
+            error={error}
           />
         </div>
 
-        {/* Center Panel - Logs Viewer */}
+        {/* Center Panel - Issue Details / Logs Viewer */}
         <div className="border-r border-border">
           <LogsViewer
-            logs={selectedDeployment?.logs ?? []}
-            deploymentName={selectedDeployment?.name ?? null}
+            logs={generateLogsFromIssue(selectedIssue)}
+            deploymentName={selectedIssue?.shortId ?? null}
             onFixWithAI={handleFixWithAI}
             isLoading={isAiLoading}
           />
