@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { getCsrfToken } from "next-auth/react"
+import { useState } from "react"
 import dynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
 
@@ -13,40 +12,13 @@ const DarkVeil = dynamic(() => import("@/components/effects/dark-veil"), {
 
 export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
-  const [csrfToken, setCsrfToken] = useState<string | null>(null)
-
-  useEffect(() => {
-    // Fetch CSRF token on mount
-    getCsrfToken().then((token) => {
-      setCsrfToken(token || null)
-    })
-  }, [])
 
   const handleGoogleSignIn = () => {
     setIsLoading(true)
-    // Use form submission which properly handles CSRF
-    const form = document.createElement("form")
-    form.method = "POST"
-    form.action = "/api/auth/signin/google"
-    
-    // Add CSRF token
-    if (csrfToken) {
-      const csrfInput = document.createElement("input")
-      csrfInput.type = "hidden"
-      csrfInput.name = "csrfToken"
-      csrfInput.value = csrfToken
-      form.appendChild(csrfInput)
-    }
-    
-    // Add callback URL
-    const callbackInput = document.createElement("input")
-    callbackInput.type = "hidden"
-    callbackInput.name = "callbackUrl"
-    callbackInput.value = window.location.origin
-    form.appendChild(callbackInput)
-    
-    document.body.appendChild(form)
-    form.submit()
+    // Redirect to NextAuth's built-in signin page with Google provider
+    // This handles CSRF automatically
+    const callbackUrl = encodeURIComponent(window.location.origin)
+    window.location.href = `/api/auth/signin?callbackUrl=${callbackUrl}`
   }
 
   return (
