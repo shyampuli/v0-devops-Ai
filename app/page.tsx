@@ -16,7 +16,6 @@ const SENTRY_ORG = "tcs-goh"
 
 export default function DashboardPage() {
   const [currentView, setCurrentView] = useState<"landing" | "dashboard">("landing")
-  const [theme, setTheme] = useState<"light" | "dark">("dark")
   const [issues, setIssues] = useState<SentryIssue[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,24 +26,6 @@ export default function DashboardPage() {
   const [isAiLoading, setIsAiLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
-
-  // Load theme from localStorage on mount
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("devops-theme") as "light" | "dark" | null
-    if (savedTheme) {
-      setTheme(savedTheme)
-      document.documentElement.classList.toggle("dark", savedTheme === "dark")
-    } else {
-      document.documentElement.classList.add("dark")
-    }
-  }, [])
-
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark"
-    setTheme(newTheme)
-    localStorage.setItem("devops-theme", newTheme)
-    document.documentElement.classList.toggle("dark", newTheme === "dark")
-  }
 
   const handleNavigateHome = () => {
     setCurrentView("landing")
@@ -209,8 +190,6 @@ export default function DashboardPage() {
       <Navbar
         currentView={currentView}
         onNavigateHome={handleNavigateHome}
-        theme={theme}
-        onToggleTheme={toggleTheme}
       />
 
       {/* Main Content */}

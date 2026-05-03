@@ -2,17 +2,16 @@
 
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { Home, Settings, Moon, Sun, LogOut, User, ChevronDown } from "lucide-react"
+import { Home, Settings, LogOut, User, ChevronDown, Bell, HelpCircle, Keyboard, ExternalLink } from "lucide-react"
 
 interface NavbarProps {
   currentView: "landing" | "dashboard"
   onNavigateHome: () => void
-  theme: "light" | "dark"
-  onToggleTheme: () => void
 }
 
-export function Navbar({ currentView, onNavigateHome, theme, onToggleTheme }: NavbarProps) {
+export function Navbar({ currentView, onNavigateHome }: NavbarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [notifications, setNotifications] = useState(true)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown on outside click
@@ -29,6 +28,20 @@ export function Navbar({ currentView, onNavigateHome, theme, onToggleTheme }: Na
   const handleSignOut = () => {
     setIsDropdownOpen(false)
     onNavigateHome()
+  }
+
+  const toggleNotifications = () => {
+    setNotifications(!notifications)
+  }
+
+  const openDocs = () => {
+    window.open("https://docs.sentry.io/", "_blank")
+    setIsDropdownOpen(false)
+  }
+
+  const openKeyboardShortcuts = () => {
+    alert("Keyboard Shortcuts:\n\n• Ctrl/Cmd + K: Quick search\n• Ctrl/Cmd + R: Refresh issues\n• Escape: Close modal\n• Arrow keys: Navigate issues")
+    setIsDropdownOpen(false)
   }
 
   return (
@@ -78,7 +91,7 @@ export function Navbar({ currentView, onNavigateHome, theme, onToggleTheme }: Na
           {/* Dropdown Menu */}
           <div
             className={cn(
-              "absolute right-0 top-full mt-2 w-64 origin-top-right overflow-hidden rounded-2xl border border-white/10 bg-black/90 shadow-2xl backdrop-blur-xl transition-all duration-200",
+              "absolute right-0 top-full mt-2 w-72 origin-top-right overflow-hidden rounded-2xl border border-white/10 bg-black/90 shadow-2xl backdrop-blur-xl transition-all duration-200",
               isDropdownOpen
                 ? "scale-100 opacity-100"
                 : "pointer-events-none scale-95 opacity-0"
@@ -99,31 +112,69 @@ export function Navbar({ currentView, onNavigateHome, theme, onToggleTheme }: Na
 
             {/* Menu Items */}
             <div className="p-2">
+              {/* Version Info */}
               <div className="mb-2 flex items-center justify-between rounded-xl px-3 py-2 text-white/60">
                 <span className="text-xs">Version</span>
                 <span className="text-xs font-medium text-white/80">v1.0.0</span>
               </div>
 
+              {/* Notifications Toggle */}
+              <button
+                onClick={toggleNotifications}
+                className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm text-white/80 transition-all hover:bg-white/5 hover:text-white"
+              >
+                <div className="flex items-center gap-3">
+                  <Bell className="size-4" />
+                  Notifications
+                </div>
+                <div
+                  className={cn(
+                    "relative h-5 w-9 rounded-full transition-colors",
+                    notifications ? "bg-blue-500" : "bg-white/20"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "absolute top-0.5 size-4 rounded-full bg-white transition-transform",
+                      notifications ? "translate-x-4" : "translate-x-0.5"
+                    )}
+                  />
+                </div>
+              </button>
+
+              {/* Settings */}
               <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/80 transition-all hover:bg-white/5 hover:text-white">
                 <Settings className="size-4" />
                 Settings
               </button>
 
+              {/* Keyboard Shortcuts */}
               <button
-                onClick={onToggleTheme}
+                onClick={openKeyboardShortcuts}
                 className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm text-white/80 transition-all hover:bg-white/5 hover:text-white"
               >
                 <div className="flex items-center gap-3">
-                  {theme === "dark" ? <Moon className="size-4" /> : <Sun className="size-4" />}
-                  Theme
+                  <Keyboard className="size-4" />
+                  Keyboard Shortcuts
                 </div>
-                <div className="flex items-center gap-2 rounded-full bg-white/10 px-2 py-1">
-                  <span className="text-xs capitalize">{theme}</span>
+                <kbd className="rounded bg-white/10 px-1.5 py-0.5 text-xs text-white/60">?</kbd>
+              </button>
+
+              {/* Documentation */}
+              <button
+                onClick={openDocs}
+                className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm text-white/80 transition-all hover:bg-white/5 hover:text-white"
+              >
+                <div className="flex items-center gap-3">
+                  <HelpCircle className="size-4" />
+                  Documentation
                 </div>
+                <ExternalLink className="size-3 text-white/40" />
               </button>
 
               <div className="my-2 border-t border-white/10" />
 
+              {/* Sign Out */}
               <button
                 onClick={handleSignOut}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-red-400 transition-all hover:bg-red-500/10"
