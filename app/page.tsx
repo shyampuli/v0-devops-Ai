@@ -134,18 +134,12 @@ export default function DashboardPage() {
       environment: environment,
     }
 
-    // Debug logging - confirm real data
-    console.log("[v0] AI Analysis Request:", {
-      errorMessage: payload.error,
-      stackTrace: payload.stackTrace.substring(0, 300) + (payload.stackTrace.length > 300 ? "..." : ""),
-      source: payload.source,
-      environment: payload.environment,
-    })
+
 
     // Helper function to make the API call
     const callAI = async (): Promise<{ success: boolean; data?: string; error?: string }> => {
       try {
-        const response = await fetch("/api/analyze-error", {
+        const response = await fetch("/api/ai", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -177,19 +171,14 @@ export default function DashboardPage() {
 
     // Retry once if first attempt fails
     if (!result.success) {
-      console.log("[v0] First AI attempt failed, retrying...", result.error)
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second before retry
+      await new Promise(resolve => setTimeout(resolve, 1000))
       result = await callAI()
     }
 
     if (result.success && result.data) {
-      console.log("[v0] AI Analysis Success - response received")
       setAiContent(result.data)
     } else {
-      // Show ACTUAL error message - no generic fallback
       const actualError = result.error || "Unknown error"
-      console.error("[v0] AI analysis failed:", actualError)
-      // Display the real error, not a fake analysis
       setAiContent(`Error: ${actualError}`)
     }
 
