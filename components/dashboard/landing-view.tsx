@@ -1,6 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import Image from "next/image"
 import { ArrowRight, Sparkles, Zap, Shield, BarChart3, Clock, Code, GitBranch } from "lucide-react"
 
 // Dynamically import DarkVeil to avoid SSR issues with OGL
@@ -248,11 +249,14 @@ export function LandingView({ onViewErrors }: LandingViewProps) {
         {/* Footer */}
         <footer className="border-t border-white/10 px-6 py-12">
           <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">
-            <div className="flex items-center gap-3">
-              <div className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400">
-                <span className="text-xs font-bold text-white">D</span>
-              </div>
-              <span className="text-sm font-semibold text-white">DevOps AI</span>
+            <div className="flex items-center">
+              <Image
+                src="/images/devops-ai-logo.png"
+                alt="DevOps AI"
+                width={80}
+                height={32}
+                className="object-contain"
+              />
             </div>
             <p className="text-sm text-white/40">
               Built with Sentry MCP and Google Gemini AI

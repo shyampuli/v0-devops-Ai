@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { signIn } from "next-auth/react"
 import dynamic from "next/dynamic"
+import Image from "next/image"
 import { Loader2 } from "lucide-react"
 
 // Dynamically import DarkVeil to avoid SSR issues
@@ -42,8 +43,15 @@ export function LoginPage() {
           {/* Header */}
           <div className="px-8 pb-4 pt-10 text-center">
             {/* Logo */}
-            <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 shadow-lg shadow-blue-500/25">
-              <span className="text-2xl font-bold text-white">D</span>
+            <div className="mx-auto mb-6">
+              <Image
+                src="/images/devops-ai-logo.png"
+                alt="DevOps AI"
+                width={120}
+                height={80}
+                className="object-contain"
+                priority
+              />
             </div>
             <h1 className="text-2xl font-bold text-white">Welcome to DevOps AI</h1>
             <p className="mt-2 text-sm text-white/60">

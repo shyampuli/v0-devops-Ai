@@ -51,11 +51,15 @@ export function Navbar({ currentView, onNavigateHome }: NavbarProps) {
     <nav className="sticky top-0 z-50 border-b border-white/10 bg-black/60 backdrop-blur-xl">
       <div className="flex h-16 items-center justify-between px-6">
         {/* Left - Logo */}
-        <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-cyan-400">
-            <span className="text-sm font-bold text-white">D</span>
-          </div>
-          <span className="text-lg font-semibold text-white">DevOps AI</span>
+        <div className="flex items-center gap-2">
+          <Image
+            src="/images/devops-ai-logo.png"
+            alt="DevOps AI"
+            width={100}
+            height={40}
+            className="object-contain"
+            priority
+          />
         </div>
 
         {/* Center - Navigation */}
