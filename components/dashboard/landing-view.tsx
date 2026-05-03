@@ -3,8 +3,8 @@
 import dynamic from "next/dynamic"
 import { ArrowRight, Sparkles, Zap, Shield, BarChart3, Clock, Code, GitBranch } from "lucide-react"
 
-// Dynamically import ColorBends to avoid SSR issues with Three.js
-const ColorBends = dynamic(() => import("@/components/effects/color-bends"), {
+// Dynamically import DarkVeil to avoid SSR issues with OGL
+const DarkVeil = dynamic(() => import("@/components/effects/dark-veil"), {
   ssr: false,
   loading: () => <div className="absolute inset-0 bg-black" />,
 })
@@ -18,20 +18,14 @@ export function LandingView({ onViewErrors }: LandingViewProps) {
     <div className="relative min-h-screen overflow-y-auto bg-black">
       {/* Fixed Animated Background */}
       <div className="fixed inset-0 h-screen w-screen">
-        <ColorBends
-          colors={["#3b82f6", "#06b6d4", "#0ea5e9"]}
-          rotation={45}
-          speed={0.15}
-          scale={1.2}
-          frequency={0.8}
-          warpStrength={0.8}
-          mouseInfluence={0.5}
-          noise={0.1}
-          parallax={0.3}
-          iterations={2}
-          intensity={1.2}
-          bandWidth={5}
-          transparent={false}
+        <DarkVeil
+          hueShift={180}
+          speed={0.3}
+          warpAmount={0.5}
+          noiseIntensity={0.02}
+          scanlineIntensity={0}
+          scanlineFrequency={0}
+          resolutionScale={1}
         />
       </div>
 
