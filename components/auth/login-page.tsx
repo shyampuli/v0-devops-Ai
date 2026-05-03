@@ -17,10 +17,9 @@ export function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsLoading(true)
     try {
-      // Use redirect: true to let NextAuth handle the OAuth flow
+      // Use "/" as callbackUrl - NextAuth will resolve this to the full URL
       await signIn("google", { 
-        redirect: true,
-        callbackUrl: window.location.origin,
+        callbackUrl: "/",
       })
     } catch (error) {
       console.error("Sign in error:", error)

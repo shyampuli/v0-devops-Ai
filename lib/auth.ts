@@ -1,18 +1,19 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 
+// Get the base URL from environment or Vercel URL
+const getBaseUrl = () => {
+  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL
+  if (process.env.AUTH_URL) return process.env.AUTH_URL
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+  return undefined
+}
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code",
-        },
-      },
     }),
   ],
   callbacks: {
@@ -29,9 +30,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token
     },
     async redirect({ url, baseUrl }) {
-      // Always redirect to the base URL after sign in
+      // Handle redirects properly for deployed environment
       if (url.startsWith("/")) return `${baseUrl}${url}`
-      if (new URL(url).origin === baseUrl) return url
+      try {
+        const urlOrigin = new URL(url).origin
+        if (urlOrigin === baseUrl) return url
+      } catch {
+        // Invalid URL, return base
+      }
       return baseUrl
     },
   },
@@ -39,5 +45,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     strategy: "jwt",
   },
   trustHost: true,
-  debug: process.env.NODE_ENV === "development",
 })
