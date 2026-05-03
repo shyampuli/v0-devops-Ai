@@ -15,6 +15,7 @@ interface AIAnalysisModalProps {
   content: string | null
   isLoading: boolean
   issueTitle?: string
+  onRetry?: () => void
 }
 
 interface ParsedAnalysis {
@@ -108,8 +109,10 @@ export function AIAnalysisModal({
   content,
   isLoading,
   issueTitle,
+  onRetry,
 }: AIAnalysisModalProps) {
   const parsed = content ? parseAnalysis(content) : null
+  const isError = content?.startsWith("Problem:\nAI analysis failed")
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -181,8 +184,19 @@ export function AIAnalysisModal({
               )}
             </div>
           ) : content ? (
-            <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
-              {content}
+            <div className="space-y-4">
+              <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
+                {content}
+              </div>
+              {isError && onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-sm font-medium text-background transition-all hover:opacity-90"
+                >
+                  <Sparkles className="size-4" />
+                  Retry Analysis
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex min-h-[200px] items-center justify-center">

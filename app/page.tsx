@@ -94,36 +94,85 @@ export default function DashboardPage() {
     setIsAiLoading(true)
     setAiContent(null)
 
-    try {
-      const response = await fetch("/api/analyze-error", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          issueData: {
-            title: issueDetails.title,
-            culprit: issueDetails.culprit,
-            level: issueDetails.level,
-            platform: issueDetails.platform,
-            environment: issueDetails.environment,
-            stackTrace: issueDetails.stackTrace,
-            tags: Object.entries(issueDetails.tags)
+    // Build payload with real data
+    const payload = {
+      issueData: {
+        title: issueDetails.title || "Unknown error",
+        culprit: issueDetails.culprit || "Unknown source",
+        level: issueDetails.level || "error",
+        platform: issueDetails.platform || "unknown",
+        environment: issueDetails.environment || "production",
+        stackTrace: issueDetails.stackTrace || issueDetails.title || "No stack trace available",
+        tags: issueDetails.tags && Object.keys(issueDetails.tags).length > 0
+          ? Object.entries(issueDetails.tags)
               .map(([k, v]) => `${k}: ${v}`)
-              .join("\n"),
-            context: JSON.stringify(issueDetails.context, null, 2),
-          },
-        }),
-      })
-
-      if (!response.ok) throw new Error("AI analysis failed")
-      const data = await response.json()
-      setAiContent(data.analysis)
-    } catch {
-      setAiContent(
-        "Problem:\nFailed to analyze the error due to a service interruption.\n\nCause:\nThe AI service may be temporarily unavailable or there was a network timeout.\n\nFix:\n1. Check your network connection\n2. Retry the analysis\n3. If the issue persists, check the API endpoint status\n\nPrevention:\nImplement retry logic with exponential backoff for AI service calls."
-      )
-    } finally {
-      setIsAiLoading(false)
+              .join("\n")
+          : "No tags",
+        context: issueDetails.context && Object.keys(issueDetails.context).length > 0
+          ? JSON.stringify(issueDetails.context, null, 2)
+          : "No additional context",
+      },
     }
+
+    // Log payload to confirm real data is being sent
+    console.log("[v0] AI Analysis Payload:", {
+      error: payload.issueData.title,
+      stackTrace: payload.issueData.stackTrace?.substring(0, 200) + "...",
+      source: payload.issueData.culprit,
+    })
+
+    // Helper function to make the API call
+    const callAI = async (): Promise<{ success: boolean; data?: string; error?: string }> => {
+      try {
+        const response = await fetch("/api/analyze-error", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          return { 
+            success: false, 
+            error: errorData.error || `Request failed with status ${response.status}` 
+          }
+        }
+
+        const data = await response.json()
+        if (!data.analysis) {
+          return { success: false, error: "Empty response from AI service" }
+        }
+        return { success: true, data: data.analysis }
+      } catch (err) {
+        return { 
+          success: false, 
+          error: err instanceof Error ? err.message : "Network error" 
+        }
+      }
+    }
+
+    // First attempt
+    let result = await callAI()
+
+    // Retry once if first attempt fails
+    if (!result.success) {
+      console.log("[v0] First AI attempt failed, retrying...", result.error)
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Wait 1 second before retry
+      result = await callAI()
+    }
+
+    if (result.success && result.data) {
+      setAiContent(result.data)
+    } else {
+      // Show actual error message, not generic text
+      const errorMessage = result.error || "Unknown error occurred"
+      console.error("[v0] AI analysis failed after retry:", errorMessage)
+      setAiContent(
+        `Problem:\nAI analysis failed: ${errorMessage}\n\nCause:\nThe analysis could not be completed. This may be due to:\n- Network connectivity issues\n- AI service rate limiting\n- Invalid request data\n\nFix:\n1. Check the browser console for detailed error logs\n2. Verify the stack trace data is available for this issue\n3. Try refreshing the page and selecting the issue again\n4. If the problem persists, check the API endpoint at /api/analyze-error\n\nPrevention:\nEnsure robust error handling and logging in production.`
+      )
+    }
+
+    setIsAiLoading(false)
   }
 
   return (
@@ -182,6 +231,7 @@ export default function DashboardPage() {
         content={aiContent}
         isLoading={isAiLoading}
         issueTitle={issueDetails?.title}
+        onRetry={handleFixWithAI}
       />
     </div>
   )
