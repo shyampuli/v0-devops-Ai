@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { Home, Settings, LogOut, User, ChevronDown, Bell, HelpCircle, Keyboard, ExternalLink } from "lucide-react"
+import { Home, LogOut, User, ChevronDown, Bell, HelpCircle, Keyboard, ExternalLink } from "lucide-react"
 
 interface User {
   email: string
@@ -151,12 +151,6 @@ export function Navbar({ currentView, onNavigateHome, user, onSignOut }: NavbarP
                     )}
                   />
                 </div>
-              </button>
-
-              {/* Settings */}
-              <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-white/80 transition-all hover:bg-white/5 hover:text-white">
-                <Settings className="size-4" />
-                Settings
               </button>
 
               {/* Keyboard Shortcuts */}
