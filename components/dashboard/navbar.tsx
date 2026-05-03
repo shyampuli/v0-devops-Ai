@@ -1,22 +1,18 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useSession, signOut } from "next-auth/react"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Home, LogOut, User, ChevronDown, Bell, HelpCircle, Keyboard, ExternalLink } from "lucide-react"
-
-interface User {
-  email: string
-  name: string
-}
 
 interface NavbarProps {
   currentView: "landing" | "dashboard"
   onNavigateHome: () => void
-  user?: User | null
-  onSignOut?: () => void
 }
 
-export function Navbar({ currentView, onNavigateHome, user, onSignOut }: NavbarProps) {
+export function Navbar({ currentView, onNavigateHome }: NavbarProps) {
+  const { data: session } = useSession()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [notifications, setNotifications] = useState(true)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -34,11 +30,7 @@ export function Navbar({ currentView, onNavigateHome, user, onSignOut }: NavbarP
 
   const handleSignOut = () => {
     setIsDropdownOpen(false)
-    if (onSignOut) {
-      onSignOut()
-    } else {
-      onNavigateHome()
-    }
+    signOut({ callbackUrl: "/" })
   }
 
   const toggleNotifications = () => {
@@ -88,9 +80,19 @@ export function Navbar({ currentView, onNavigateHome, user, onSignOut }: NavbarP
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center gap-2 rounded-xl px-3 py-2 text-white/70 transition-all hover:bg-white/5 hover:text-white"
           >
-            <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
-              <User className="size-4 text-white" />
-            </div>
+            {session?.user?.image ? (
+              <Image
+                src={session.user.image}
+                alt={session.user.name || "User"}
+                width={32}
+                height={32}
+                className="rounded-full"
+              />
+            ) : (
+              <div className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
+                <User className="size-4 text-white" />
+              </div>
+            )}
             <ChevronDown
               className={cn(
                 "size-4 transition-transform duration-200",
@@ -111,12 +113,26 @@ export function Navbar({ currentView, onNavigateHome, user, onSignOut }: NavbarP
             {/* User Info */}
             <div className="border-b border-white/10 p-4">
               <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
-                  <User className="size-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white">{user?.name || "User"}</p>
-                  <p className="text-xs text-white/60">{user?.email || "user@example.com"}</p>
+                {session?.user?.image ? (
+                  <Image
+                    src={session.user.image}
+                    alt={session.user.name || "User"}
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <div className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
+                    <User className="size-5 text-white" />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-white">
+                    {session?.user?.name || "User"}
+                  </p>
+                  <p className="truncate text-xs text-white/60">
+                    {session?.user?.email || "user@example.com"}
+                  </p>
                 </div>
               </div>
             </div>
