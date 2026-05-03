@@ -52,6 +52,16 @@ function RelativeTime({ dateString }: { dateString: string }) {
   return <>{time}</>
 }
 
+function cleanCulprit(culprit: string): string {
+  if (!culprit) return "Unknown Source"
+  // Fix "?(index)" and similar patterns
+  const cleaned = culprit
+    .replace(/\?\(index\)/g, "")
+    .replace(/\?\s*$/g, "")
+    .trim()
+  return cleaned || "Unknown Source"
+}
+
 function SeverityIndicator({ level }: { level: SentryIssue["level"] }) {
   const config = {
     fatal: { color: "bg-red-500", icon: AlertCircle },
@@ -167,7 +177,7 @@ export function SentryIssuesList({
                     "mt-0.5 truncate text-xs",
                     selectedId === issue.id ? "text-primary-foreground/70" : "text-muted-foreground"
                   )}>
-                    {issue.culprit}
+                    {cleanCulprit(issue.culprit)}
                   </p>
                   <div className={cn(
                     "mt-2 flex items-center gap-3 text-xs",

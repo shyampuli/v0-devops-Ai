@@ -94,31 +94,52 @@ export default function DashboardPage() {
     setIsAiLoading(true)
     setAiContent(null)
 
-    // Build payload with real data
-    const payload = {
-      issueData: {
-        title: issueDetails.title || "Unknown error",
-        culprit: issueDetails.culprit || "Unknown source",
-        level: issueDetails.level || "error",
-        platform: issueDetails.platform || "unknown",
-        environment: issueDetails.environment || "production",
-        stackTrace: issueDetails.stackTrace || issueDetails.title || "No stack trace available",
-        tags: issueDetails.tags && Object.keys(issueDetails.tags).length > 0
-          ? Object.entries(issueDetails.tags)
-              .map(([k, v]) => `${k}: ${v}`)
-              .join("\n")
-          : "No tags",
-        context: issueDetails.context && Object.keys(issueDetails.context).length > 0
-          ? JSON.stringify(issueDetails.context, null, 2)
-          : "No additional context",
-      },
+    // Extract proper source - fix "?(index)" by parsing from stack trace or culprit
+    const extractSource = (): string => {
+      // Try to get function name from stack trace
+      if (issueDetails.stackTrace) {
+        // Look for patterns like "at functionName" or "functionName@"
+        const functionMatch = issueDetails.stackTrace.match(/(?:at\s+)?(\w+)(?:\s+\(|@)/)
+        if (functionMatch && functionMatch[1] && functionMatch[1] !== "Object" && functionMatch[1] !== "Module") {
+          return functionMatch[1]
+        }
+        // Look for file:line pattern like "index.js:42"
+        const fileMatch = issueDetails.stackTrace.match(/([a-zA-Z0-9_-]+\.[jt]sx?):?\d*/)
+        if (fileMatch && fileMatch[1]) {
+          return fileMatch[1]
+        }
+      }
+      // Fall back to culprit, but clean up "?(index)" patterns
+      if (issueDetails.culprit) {
+        const cleanCulprit = issueDetails.culprit.replace(/\?\(index\)/g, "").trim()
+        if (cleanCulprit && cleanCulprit !== "?") {
+          return cleanCulprit
+        }
+      }
+      return "Unknown Source"
     }
 
-    // Log payload to confirm real data is being sent
-    console.log("[v0] AI Analysis Payload:", {
-      error: payload.issueData.title,
-      stackTrace: payload.issueData.stackTrace?.substring(0, 200) + "...",
-      source: payload.issueData.culprit,
+    // Build flat payload structure
+    const errorMessage = issueDetails.title || "Unknown error"
+    const stackTrace = issueDetails.stackTrace && issueDetails.stackTrace.trim() 
+      ? issueDetails.stackTrace 
+      : errorMessage
+    const source = extractSource()
+    const environment = issueDetails.environment || "production"
+
+    const payload = {
+      error: errorMessage,
+      stackTrace: stackTrace,
+      source: source,
+      environment: environment,
+    }
+
+    // Debug logging - confirm real data
+    console.log("[v0] AI Analysis Request:", {
+      errorMessage: payload.error,
+      stackTrace: payload.stackTrace.substring(0, 300) + (payload.stackTrace.length > 300 ? "..." : ""),
+      source: payload.source,
+      environment: payload.environment,
     })
 
     // Helper function to make the API call
@@ -162,14 +183,14 @@ export default function DashboardPage() {
     }
 
     if (result.success && result.data) {
+      console.log("[v0] AI Analysis Success - response received")
       setAiContent(result.data)
     } else {
-      // Show actual error message, not generic text
-      const errorMessage = result.error || "Unknown error occurred"
-      console.error("[v0] AI analysis failed after retry:", errorMessage)
-      setAiContent(
-        `Problem:\nAI analysis failed: ${errorMessage}\n\nCause:\nThe analysis could not be completed. This may be due to:\n- Network connectivity issues\n- AI service rate limiting\n- Invalid request data\n\nFix:\n1. Check the browser console for detailed error logs\n2. Verify the stack trace data is available for this issue\n3. Try refreshing the page and selecting the issue again\n4. If the problem persists, check the API endpoint at /api/analyze-error\n\nPrevention:\nEnsure robust error handling and logging in production.`
-      )
+      // Show ACTUAL error message - no generic fallback
+      const actualError = result.error || "Unknown error"
+      console.error("[v0] AI analysis failed:", actualError)
+      // Display the real error, not a fake analysis
+      setAiContent(`Error: ${actualError}`)
     }
 
     setIsAiLoading(false)

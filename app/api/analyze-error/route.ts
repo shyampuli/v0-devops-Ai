@@ -1,78 +1,92 @@
 import { generateText } from "ai"
 
 export async function POST(req: Request) {
-  const { issueData } = await req.json()
+  try {
+    const body = await req.json()
+    
+    // Accept flat payload structure: { error, stackTrace, source, environment }
+    const errorMessage = body.error || body.issueData?.title
+    const stackTrace = body.stackTrace || body.issueData?.stackTrace
+    const source = body.source || body.issueData?.culprit
+    const environment = body.environment || body.issueData?.environment || "production"
 
-  if (!issueData) {
-    return Response.json({ error: "No issue data provided" }, { status: 400 })
-  }
+    // Validate required fields
+    if (!errorMessage) {
+      return Response.json({ error: "Missing error message" }, { status: 400 })
+    }
 
-  const prompt = `You are a senior DevOps engineer with 15+ years of experience debugging production systems. You're analyzing a critical error from Sentry that needs immediate attention.
+    if (!stackTrace || stackTrace.trim() === "") {
+      return Response.json({ error: "Missing stack trace" }, { status: 400 })
+    }
 
-CONTEXT: This is a production environment. Your analysis must be precise, actionable, and based on real engineering experience.
+    // Log what we're sending to AI
+    console.log("[v0] AI Request:", {
+      error: errorMessage,
+      source: source,
+      stackTraceLength: stackTrace.length,
+    })
 
-=== ERROR DETAILS ===
-Title: ${issueData.title}
-Culprit: ${issueData.culprit}
-Severity: ${issueData.level}
-Platform: ${issueData.platform || "unknown"}
-Environment: ${issueData.environment || "production"}
+    const systemPrompt = `You are a senior DevOps engineer and SRE.
 
-=== STACK TRACE ===
-${issueData.stackTrace || "No stack trace available"}
+You are given a real production error with stack trace.
 
-=== ADDITIONAL CONTEXT ===
-${issueData.context || "No additional context"}
+Perform deep technical analysis.
 
-=== TAGS ===
-${issueData.tags || "No tags"}
+Do NOT give generic answers.
+Do NOT mention AI limitations.
+Do NOT say service unavailable.
 
-=== YOUR ANALYSIS ===
-Provide a DETAILED, production-grade analysis. Think like you're explaining this to another senior engineer who needs to fix this NOW.
+Be specific, technical, and actionable.
 
-Use EXACTLY this format:
+Use this exact format:
 
 Problem:
-Clearly explain what is happening in technical terms. Reference the specific error type, the component/function involved, and the observable symptoms. Do NOT be vague - name the actual error and what it means.
+- Explain what the error means internally
 
 Cause:
-Perform root cause analysis. Consider:
-- What conditions trigger this error?
-- Is this a code bug, configuration issue, or infrastructure problem?
-- Are there race conditions, null pointer issues, or dependency failures?
-- What is the most likely scenario based on the stack trace?
-Be specific. If the stack trace points to a specific file/line, mention it.
+- Root cause analysis
+- Mention code-level or system-level reasons
 
 Fix:
-Provide step-by-step actionable solution:
-1. Immediate mitigation (if applicable)
-2. Code-level fix with specific guidance
-3. How to verify the fix worked
-4. Any rollback considerations
-Include code snippets or configuration changes if relevant.
+- Step-by-step solution
+- Include code fixes if applicable
 
 Prevention:
-Recommend engineering best practices:
-- What monitoring/alerting should be added?
-- What tests would catch this in CI?
-- Are there architectural improvements to prevent this class of error?
-- What safeguards or validation should be implemented?
+- Monitoring, logging, validation strategies`
 
-Remember: No vague advice. No generic responses. Be the senior engineer this team needs.`
+    const userPrompt = `Analyze this production error:
 
-  try {
+ERROR: ${errorMessage}
+
+SOURCE: ${source || "Unknown"}
+
+ENVIRONMENT: ${environment}
+
+STACK TRACE:
+${stackTrace}
+
+Provide detailed technical analysis.`
+
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
-      prompt,
+      system: systemPrompt,
+      prompt: userPrompt,
       maxOutputTokens: 2000,
       temperature: 0.2,
     })
 
+    if (!text || text.trim() === "") {
+      return Response.json({ error: "Empty response from AI" }, { status: 500 })
+    }
+
+    console.log("[v0] AI Response received, length:", text.length)
+
     return Response.json({ analysis: text })
   } catch (error) {
-    console.error("[v0] AI analysis error:", error)
+    const errorMessage = error instanceof Error ? error.message : "Unknown error"
+    console.error("[v0] AI analysis error:", errorMessage)
     return Response.json(
-      { error: "Failed to analyze error" },
+      { error: `AI service error: ${errorMessage}` },
       { status: 500 }
     )
   }

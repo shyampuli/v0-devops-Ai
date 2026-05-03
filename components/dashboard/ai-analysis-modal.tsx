@@ -111,8 +111,9 @@ export function AIAnalysisModal({
   issueTitle,
   onRetry,
 }: AIAnalysisModalProps) {
-  const parsed = content ? parseAnalysis(content) : null
-  const isError = content?.startsWith("Problem:\nAI analysis failed")
+  // Check if content is an error message (starts with "Error:")
+  const isError = content?.startsWith("Error:")
+  const parsed = content && !isError ? parseAnalysis(content) : null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -183,12 +184,16 @@ export function AIAnalysisModal({
                 />
               )}
             </div>
-          ) : content ? (
+          ) : isError && content ? (
             <div className="space-y-4">
-              <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
-                {content}
+              <div className="rounded-xl border border-red-200 bg-red-50 p-5">
+                <div className="mb-2 flex items-center gap-2">
+                  <AlertCircle className="size-4 text-red-500" />
+                  <span className="text-sm font-semibold text-red-900">Analysis Failed</span>
+                </div>
+                <p className="text-sm text-red-800">{content.replace("Error: ", "")}</p>
               </div>
-              {isError && onRetry && (
+              {onRetry && (
                 <button
                   onClick={onRetry}
                   className="flex items-center gap-2 rounded-xl bg-foreground px-4 py-2.5 text-sm font-medium text-background transition-all hover:opacity-90"
@@ -197,6 +202,10 @@ export function AIAnalysisModal({
                   Retry Analysis
                 </button>
               )}
+            </div>
+          ) : content ? (
+            <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
+              {content}
             </div>
           ) : (
             <div className="flex min-h-[200px] items-center justify-center">
