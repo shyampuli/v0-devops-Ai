@@ -31,7 +31,7 @@ It integrates **Sentry MCP (Model Context Protocol)** to fetch real-time product
   Convert complex logs into meaningful, actionable insights.
 
 
-## 🧩 What Makes This Unique
+## What Makes This Unique
 
 Unlike traditional dashboards:
 
