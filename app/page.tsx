@@ -5,12 +5,11 @@ import {
   SentryIssuesList,
   type SentryIssue,
 } from "@/components/dashboard/sentry-issues-list"
-import { LogsViewer, type IssueDetails } from "@/components/dashboard/logs-viewer"
+import { IssueDetailsPanel, type IssueDetails } from "@/components/dashboard/issue-details-panel"
 import { AIAssistantPanel } from "@/components/dashboard/ai-assistant-panel"
 import { RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-// Sentry organization config
 const SENTRY_ORG = "tcs-goh"
 
 export default function DashboardPage() {
@@ -34,12 +33,10 @@ export default function DashboardPage() {
 
     try {
       const response = await fetch(`/api/sentry/issues?org=${SENTRY_ORG}`)
-      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.error || `Failed to fetch issues: ${response.status}`)
       }
-
       const data = await response.json()
       setIssues(data.issues || [])
     } catch (err) {
@@ -60,19 +57,13 @@ export default function DashboardPage() {
     setIsLoadingDetails(true)
 
     try {
-      // Fetch detailed issue data
       const response = await fetch(
         `/api/sentry/issue-details?org=${SENTRY_ORG}&issueId=${issue.shortId}`
       )
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch issue details")
-      }
-
+      if (!response.ok) throw new Error("Failed to fetch issue details")
       const data = await response.json()
       setIssueDetails(data.details)
-    } catch (err) {
-      // Fallback to basic issue data if details fetch fails
+    } catch {
       setIssueDetails({
         title: issue.title,
         shortId: issue.shortId,
@@ -120,15 +111,12 @@ export default function DashboardPage() {
         }),
       })
 
-      if (!response.ok) {
-        throw new Error("AI analysis failed")
-      }
-
+      if (!response.ok) throw new Error("AI analysis failed")
       const data = await response.json()
       setAiContent(data.analysis)
-    } catch (err) {
+    } catch {
       setAiContent(
-        "Error:\nFailed to analyze the error.\n\nCause:\nThe AI service may be temporarily unavailable.\n\nFix:\n1. Check your network connection\n2. Try again in a few moments\n\nPrevention:\nEnsure stable connectivity to AI services."
+        "Problem:\nFailed to analyze the error.\n\nCause:\nThe AI service may be temporarily unavailable.\n\nFix:\nCheck your network connection and try again.\n\nPrevention:\nEnsure stable connectivity to AI services."
       )
     } finally {
       setIsAiLoading(false)
@@ -138,34 +126,32 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex size-8 items-center justify-center rounded-md bg-foreground">
-            <span className="text-sm font-bold text-background">D</span>
-          </div>
-          <h1 className="text-lg font-semibold text-foreground">
-            DevOps Dashboard
-          </h1>
-        </div>
+      <header className="flex items-center justify-between bg-card px-8 py-5">
         <div className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground">
-            {SENTRY_ORG}
-          </span>
-          <button
-            onClick={() => fetchIssues(true)}
-            disabled={isRefreshing}
-            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-          >
-            <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
-            Refresh
-          </button>
+          <div className="flex size-9 items-center justify-center rounded-xl bg-foreground">
+            <span className="text-sm font-semibold text-background">D</span>
+          </div>
+          <div>
+            <h1 className="text-base font-semibold tracking-tight text-foreground">
+              DevOps Dashboard
+            </h1>
+            <p className="text-xs text-muted-foreground">{SENTRY_ORG}</p>
+          </div>
         </div>
+        <button
+          onClick={() => fetchIssues(true)}
+          disabled={isRefreshing}
+          className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-all hover:bg-muted disabled:opacity-50"
+        >
+          <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
+          Refresh
+        </button>
       </header>
 
-      {/* Main Content - 3 Panel Layout */}
-      <div className="grid flex-1 grid-cols-[280px_1fr_320px] overflow-hidden">
-        {/* Left Panel - Sentry Issues List */}
-        <div className="border-r border-border">
+      {/* Main Content */}
+      <div className="grid flex-1 grid-cols-[300px_1fr_360px] gap-px overflow-hidden bg-border">
+        {/* Left Panel */}
+        <div className="bg-card">
           <SentryIssuesList
             issues={issues}
             selectedId={selectedIssue?.id ?? null}
@@ -175,9 +161,9 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Center Panel - Issue Details */}
-        <div className="border-r border-border">
-          <LogsViewer
+        {/* Center Panel */}
+        <div className="bg-card">
+          <IssueDetailsPanel
             issueDetails={issueDetails}
             isLoading={isLoadingDetails}
             onFixWithAI={handleFixWithAI}
@@ -185,8 +171,8 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Right Panel - AI Assistant */}
-        <div>
+        {/* Right Panel */}
+        <div className="bg-card">
           <AIAssistantPanel content={aiContent} isLoading={isAiLoading} />
         </div>
       </div>

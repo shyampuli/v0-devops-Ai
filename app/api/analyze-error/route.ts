@@ -28,7 +28,7 @@ ${issueData.tags || "No tags"}
 
 Provide your analysis in EXACTLY this format (use these exact headers):
 
-Error:
+Problem:
 [One sentence describing what the error is]
 
 Cause:
@@ -40,7 +40,7 @@ Fix:
 Prevention:
 [One to two sentences on how to prevent this in the future]
 
-Keep your response concise and engineering-focused. No fluff.`
+Be concise and engineering-focused.`
 
   try {
     const { text } = await generateText({

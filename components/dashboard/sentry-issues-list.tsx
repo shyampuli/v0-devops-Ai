@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { AlertCircle, AlertTriangle, Bug, Loader2 } from "lucide-react"
+import { AlertCircle, AlertTriangle, Bug } from "lucide-react"
 
 export interface SentryIssue {
   id: string
@@ -48,65 +48,25 @@ function RelativeTime({ dateString }: { dateString: string }) {
     return () => clearInterval(interval)
   }, [dateString])
 
-  if (time === null) {
-    return <span className="invisible">loading</span>
-  }
-
+  if (time === null) return <span className="invisible">loading</span>
   return <>{time}</>
 }
 
-function SeverityBadge({ level }: { level: SentryIssue["level"] }) {
+function SeverityIndicator({ level }: { level: SentryIssue["level"] }) {
   const config = {
-    fatal: {
-      bg: "bg-red-500/10",
-      text: "text-red-500",
-      label: "Fatal",
-    },
-    error: {
-      bg: "bg-destructive/10",
-      text: "text-destructive",
-      label: "Error",
-    },
-    warning: {
-      bg: "bg-amber-500/10",
-      text: "text-amber-500",
-      label: "Warning",
-    },
-    info: {
-      bg: "bg-blue-500/10",
-      text: "text-blue-500",
-      label: "Info",
-    },
+    fatal: { color: "bg-red-500", icon: AlertCircle },
+    error: { color: "bg-orange-500", icon: Bug },
+    warning: { color: "bg-amber-400", icon: AlertTriangle },
+    info: { color: "bg-blue-400", icon: AlertCircle },
   }
-
-  const { bg, text, label } = config[level] || config.error
+  const { color, icon: Icon } = config[level] || config.error
 
   return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase",
-        bg,
-        text
-      )}
-    >
-      {label}
-    </span>
+    <div className="relative flex items-center justify-center">
+      <div className={cn("size-2 rounded-full", color)} />
+      <Icon className="ml-2 size-4 text-muted-foreground" />
+    </div>
   )
-}
-
-function SeverityIcon({ level }: { level: SentryIssue["level"] }) {
-  switch (level) {
-    case "fatal":
-      return <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-500" />
-    case "error":
-      return <Bug className="mt-0.5 size-4 shrink-0 text-destructive" />
-    case "warning":
-      return (
-        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
-      )
-    default:
-      return <AlertCircle className="mt-0.5 size-4 shrink-0 text-blue-500" />
-  }
 }
 
 export function SentryIssuesList({
@@ -119,13 +79,13 @@ export function SentryIssuesList({
   if (isLoading) {
     return (
       <div className="flex h-full flex-col">
-        <div className="border-b border-border px-4 py-3">
-          <h2 className="text-sm font-medium text-foreground">Sentry Issues</h2>
+        <div className="px-6 py-5">
+          <h2 className="text-sm font-semibold text-foreground">Issues</h2>
         </div>
         <div className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-2 text-muted-foreground">
-            <Loader2 className="size-6 animate-spin" />
-            <p className="text-sm">Loading issues...</p>
+          <div className="flex flex-col items-center gap-3">
+            <div className="size-5 animate-spin rounded-full border-2 border-muted border-t-foreground" />
+            <p className="text-sm text-muted-foreground">Loading...</p>
           </div>
         </div>
       </div>
@@ -135,14 +95,14 @@ export function SentryIssuesList({
   if (error) {
     return (
       <div className="flex h-full flex-col">
-        <div className="border-b border-border px-4 py-3">
-          <h2 className="text-sm font-medium text-foreground">Sentry Issues</h2>
+        <div className="px-6 py-5">
+          <h2 className="text-sm font-semibold text-foreground">Issues</h2>
         </div>
-        <div className="flex flex-1 items-center justify-center p-4">
-          <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
-            <AlertCircle className="size-8 text-destructive" />
-            <p className="text-sm font-medium">Failed to load issues</p>
-            <p className="text-xs">{error}</p>
+        <div className="flex flex-1 items-center justify-center px-6">
+          <div className="text-center">
+            <AlertCircle className="mx-auto mb-3 size-8 text-muted-foreground" />
+            <p className="text-sm font-medium text-foreground">Unable to load</p>
+            <p className="mt-1 text-xs text-muted-foreground">{error}</p>
           </div>
         </div>
       </div>
@@ -152,14 +112,16 @@ export function SentryIssuesList({
   if (issues.length === 0) {
     return (
       <div className="flex h-full flex-col">
-        <div className="border-b border-border px-4 py-3">
-          <h2 className="text-sm font-medium text-foreground">Sentry Issues</h2>
+        <div className="px-6 py-5">
+          <h2 className="text-sm font-semibold text-foreground">Issues</h2>
         </div>
-        <div className="flex flex-1 items-center justify-center p-4">
-          <div className="flex flex-col items-center gap-2 text-center text-muted-foreground">
-            <Bug className="size-8" />
-            <p className="text-sm font-medium">No issues found</p>
-            <p className="text-xs">All clear! No unresolved errors.</p>
+        <div className="flex flex-1 items-center justify-center px-6">
+          <div className="text-center">
+            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-muted">
+              <Bug className="size-5 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium text-foreground">All clear</p>
+            <p className="mt-1 text-xs text-muted-foreground">No unresolved issues</p>
           </div>
         </div>
       </div>
@@ -168,45 +130,63 @@ export function SentryIssuesList({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h2 className="text-sm font-medium text-foreground">Sentry Issues</h2>
-        <span className="text-xs text-muted-foreground">
-          {issues.length} issue{issues.length !== 1 ? "s" : ""}
+      <div className="flex items-center justify-between px-6 py-5">
+        <h2 className="text-sm font-semibold text-foreground">Issues</h2>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          {issues.length}
         </span>
       </div>
       <div className="flex-1 overflow-auto">
-        {issues.map((issue) => (
-          <button
-            key={issue.id}
-            onClick={() => onSelect(issue)}
-            className={cn(
-              "flex w-full items-start gap-3 border-b border-border px-4 py-3 text-left transition-colors hover:bg-muted/50",
-              selectedId === issue.id && "bg-muted"
-            )}
-          >
-            <SeverityIcon level={issue.level} />
-            <div className="min-w-0 flex-1">
-              <div className="mb-1 flex items-center gap-2">
-                <SeverityBadge level={issue.level} />
-                <span className="text-[10px] text-muted-foreground">
-                  {issue.shortId}
-                </span>
+        <div className="space-y-1 px-3 pb-4">
+          {issues.map((issue) => (
+            <button
+              key={issue.id}
+              onClick={() => onSelect(issue)}
+              className={cn(
+                "w-full rounded-xl px-3 py-3 text-left transition-colors",
+                selectedId === issue.id
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <div className={cn(
+                  "mt-0.5",
+                  selectedId === issue.id && "opacity-80"
+                )}>
+                  <SeverityIndicator level={issue.level} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={cn(
+                    "truncate text-sm font-medium",
+                    selectedId === issue.id ? "text-primary-foreground" : "text-foreground"
+                  )}>
+                    {issue.title}
+                  </p>
+                  <p className={cn(
+                    "mt-0.5 truncate text-xs",
+                    selectedId === issue.id ? "text-primary-foreground/70" : "text-muted-foreground"
+                  )}>
+                    {issue.culprit}
+                  </p>
+                  <div className={cn(
+                    "mt-2 flex items-center gap-3 text-xs",
+                    selectedId === issue.id ? "text-primary-foreground/60" : "text-muted-foreground"
+                  )}>
+                    <span><RelativeTime dateString={issue.lastSeen} /></span>
+                    <span className="flex items-center gap-1">
+                      <span className={cn(
+                        "size-1 rounded-full",
+                        selectedId === issue.id ? "bg-primary-foreground/40" : "bg-muted-foreground/40"
+                      )} />
+                      {issue.count} events
+                    </span>
+                  </div>
+                </div>
               </div>
-              <p className="truncate text-sm font-medium text-foreground">
-                {issue.title}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {issue.culprit}
-              </p>
-              <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                <span>
-                  <RelativeTime dateString={issue.lastSeen} />
-                </span>
-                <span>{issue.count} event{issue.count !== 1 ? "s" : ""}</span>
-              </div>
-            </div>
-          </button>
-        ))}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
