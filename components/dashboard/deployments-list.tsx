@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, XCircle } from "lucide-react"
 
@@ -25,6 +26,25 @@ function getRelativeTime(date: Date): string {
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
   return `${Math.floor(diffInSeconds / 86400)}d ago`
+}
+
+function RelativeTime({ date }: { date: Date }) {
+  const [time, setTime] = useState<string | null>(null)
+
+  useEffect(() => {
+    setTime(getRelativeTime(date))
+    const interval = setInterval(() => {
+      setTime(getRelativeTime(date))
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [date])
+
+  // Return empty during SSR to avoid hydration mismatch
+  if (time === null) {
+    return <span className="invisible">loading</span>
+  }
+
+  return <>{time}</>
 }
 
 export function DeploymentsList({
@@ -57,7 +77,7 @@ export function DeploymentsList({
                 {deployment.name}
               </p>
               <p className="text-xs text-muted-foreground">
-                {getRelativeTime(deployment.timestamp)}
+                <RelativeTime date={deployment.timestamp} />
               </p>
             </div>
           </button>
