@@ -1,14 +1,6 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 
-// Get the base URL from environment or Vercel URL
-const getBaseUrl = () => {
-  if (process.env.NEXTAUTH_URL) return process.env.NEXTAUTH_URL
-  if (process.env.AUTH_URL) return process.env.AUTH_URL
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
-  return undefined
-}
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Google({
@@ -30,13 +22,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token
     },
     async redirect({ url, baseUrl }) {
-      // Handle redirects properly for deployed environment
-      if (url.startsWith("/")) return `${baseUrl}${url}`
+      // Always use relative redirects resolved against baseUrl
+      // baseUrl comes from NEXTAUTH_URL or VERCEL_URL automatically
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`
+      }
+      // Check if URL is on same origin
       try {
-        const urlOrigin = new URL(url).origin
-        if (urlOrigin === baseUrl) return url
+        const urlObj = new URL(url)
+        const baseObj = new URL(baseUrl)
+        if (urlObj.origin === baseObj.origin) {
+          return url
+        }
       } catch {
-        // Invalid URL, return base
+        // Invalid URL
       }
       return baseUrl
     },

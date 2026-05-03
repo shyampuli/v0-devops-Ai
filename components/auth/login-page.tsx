@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { signIn } from "next-auth/react"
 import dynamic from "next/dynamic"
 import { Loader2 } from "lucide-react"
 
@@ -15,10 +16,9 @@ export function LoginPage() {
 
   const handleGoogleSignIn = () => {
     setIsLoading(true)
-    // Redirect to NextAuth's built-in signin page with Google provider
-    // This handles CSRF automatically
-    const callbackUrl = encodeURIComponent(window.location.origin)
-    window.location.href = `/api/auth/signin?callbackUrl=${callbackUrl}`
+    // Use signIn from next-auth/react with relative callback URL
+    // NextAuth will resolve this using NEXTAUTH_URL
+    signIn("google", { callbackUrl: "/" })
   }
 
   return (
