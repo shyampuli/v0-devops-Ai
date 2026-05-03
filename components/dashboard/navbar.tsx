@@ -4,12 +4,19 @@ import { useState, useRef, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Home, Settings, LogOut, User, ChevronDown, Bell, HelpCircle, Keyboard, ExternalLink } from "lucide-react"
 
+interface User {
+  email: string
+  name: string
+}
+
 interface NavbarProps {
   currentView: "landing" | "dashboard"
   onNavigateHome: () => void
+  user?: User | null
+  onSignOut?: () => void
 }
 
-export function Navbar({ currentView, onNavigateHome }: NavbarProps) {
+export function Navbar({ currentView, onNavigateHome, user, onSignOut }: NavbarProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [notifications, setNotifications] = useState(true)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -27,7 +34,11 @@ export function Navbar({ currentView, onNavigateHome }: NavbarProps) {
 
   const handleSignOut = () => {
     setIsDropdownOpen(false)
-    onNavigateHome()
+    if (onSignOut) {
+      onSignOut()
+    } else {
+      onNavigateHome()
+    }
   }
 
   const toggleNotifications = () => {
@@ -104,8 +115,8 @@ export function Navbar({ currentView, onNavigateHome }: NavbarProps) {
                   <User className="size-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white">Demo User</p>
-                  <p className="text-xs text-white/60">demo@devops-ai.com</p>
+                  <p className="text-sm font-medium text-white">{user?.name || "User"}</p>
+                  <p className="text-xs text-white/60">{user?.email || "user@example.com"}</p>
                 </div>
               </div>
             </div>

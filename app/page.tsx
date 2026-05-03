@@ -9,12 +9,21 @@ import { IssueDetailsPanel, type IssueDetails } from "@/components/dashboard/iss
 import { AIAnalysisModal } from "@/components/dashboard/ai-analysis-modal"
 import { Navbar } from "@/components/dashboard/navbar"
 import { LandingView } from "@/components/dashboard/landing-view"
+import { LoginPage } from "@/components/auth/login-page"
 import { RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const SENTRY_ORG = "tcs-goh"
 
+interface User {
+  email: string
+  name: string
+}
+
 export default function DashboardPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [currentView, setCurrentView] = useState<"landing" | "dashboard">("landing")
   const [issues, setIssues] = useState<SentryIssue[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -26,6 +35,43 @@ export default function DashboardPage() {
   const [isAiLoading, setIsAiLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Check authentication on mount
+  useEffect(() => {
+    const savedAuth = localStorage.getItem("devops-auth")
+    if (savedAuth) {
+      try {
+        const authData = JSON.parse(savedAuth)
+        if (authData.isAuthenticated && authData.user) {
+          setIsAuthenticated(true)
+          setUser(authData.user)
+        }
+      } catch {
+        localStorage.removeItem("devops-auth")
+      }
+    }
+    setIsCheckingAuth(false)
+  }, [])
+
+  const handleLogin = (userData: User) => {
+    setUser(userData)
+    setIsAuthenticated(true)
+    localStorage.setItem("devops-auth", JSON.stringify({
+      isAuthenticated: true,
+      user: userData
+    }))
+  }
+
+  const handleSignOut = () => {
+    setIsAuthenticated(false)
+    setUser(null)
+    setCurrentView("landing")
+    setSelectedIssue(null)
+    setIssueDetails(null)
+    setAiContent(null)
+    setIssues([])
+    localStorage.removeItem("devops-auth")
+  }
 
   const handleNavigateHome = () => {
     setCurrentView("landing")
@@ -184,12 +230,29 @@ export default function DashboardPage() {
     setIsAiLoading(false)
   }
 
+  // Show loading state while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-black">
+        <div className="size-8 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+      </div>
+    )
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={handleLogin} />
+  }
+
+  // Authenticated - show main app
   return (
     <div className="flex h-screen flex-col bg-black">
       {/* Navbar */}
       <Navbar
         currentView={currentView}
         onNavigateHome={handleNavigateHome}
+        user={user}
+        onSignOut={handleSignOut}
       />
 
       {/* Main Content */}
