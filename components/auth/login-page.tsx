@@ -21,6 +21,7 @@ interface StoredUser {
   password: string
   name: string
   createdAt: string
+  provider: "email" | "google"
 }
 
 const getUsersFromStorage = (): StoredUser[] => {
@@ -31,7 +32,13 @@ const getUsersFromStorage = (): StoredUser[] => {
 
 const saveUserToStorage = (user: StoredUser) => {
   const users = getUsersFromStorage()
-  users.push(user)
+  // Check if user already exists, update if so
+  const existingIndex = users.findIndex(u => u.email.toLowerCase() === user.email.toLowerCase())
+  if (existingIndex >= 0) {
+    users[existingIndex] = user
+  } else {
+    users.push(user)
+  }
   localStorage.setItem("devops-users", JSON.stringify(users))
 }
 
@@ -96,14 +103,23 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     // Simulate Google OAuth delay
     await new Promise(resolve => setTimeout(resolve, 1200))
     
-    // Show success animation
-    setShowSuccess(true)
-    await new Promise(resolve => setTimeout(resolve, 800))
-    
     // Extract name from email
     const name = googleEmail.split("@")[0].replace(/[._]/g, " ").split(" ").map(
       word => word.charAt(0).toUpperCase() + word.slice(1)
     ).join(" ")
+    
+    // Save Google user to database (so they can be recognized later)
+    saveUserToStorage({
+      email: googleEmail,
+      password: "", // No password for Google users
+      name: name,
+      createdAt: new Date().toISOString(),
+      provider: "google"
+    })
+    
+    // Show success animation
+    setShowSuccess(true)
+    await new Promise(resolve => setTimeout(resolve, 800))
     
     onLogin({
       email: googleEmail,
@@ -162,13 +178,20 @@ export function LoginPage({ onLogin }: LoginPageProps) {
         email: email,
         password: password,
         name: email.split("@")[0],
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        provider: "email"
       })
     } else {
       // Sign in flow
       if (!existingUser) {
         setIsLoading(false)
         setErrors({ general: "No account found with this email. Please sign up first." })
+        return
+      }
+      // Check if this is a Google-only account
+      if (existingUser.provider === "google") {
+        setIsLoading(false)
+        setErrors({ general: "This account uses Google Sign-In. Please use 'Continue with Google' to sign in." })
         return
       }
       if (existingUser.password !== password) {
