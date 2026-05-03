@@ -9,25 +9,6 @@ It integrates **Sentry MCP (Model Context Protocol)** to fetch real-time product
 **Try the app here:**  
 [https://your-app.vercel.app](https://devopsai.vercel.app/)
 
----
-
-## Architecture
-
-```mermaid
-flowchart LR
-    A[Sentry (Real Errors)] --> B[Sentry MCP Server]
-    B --> C[DevOps AI App (Next.js + v0)]
-    C --> D[AI Engine (Gemini / LLM)]
-    D --> C
-    C --> E[User Dashboard UI]
-
-    subgraph User Interaction
-        E --> F[Select Issue]
-        F --> G[Ask AI]
-        G --> D
-    end
-```
----
 
 ## Key Features
 
