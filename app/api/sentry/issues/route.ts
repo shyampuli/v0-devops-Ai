@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 
 // This endpoint returns Sentry issues data
-// In production, this would connect to Sentry API directly
-// For now, we return the real data fetched via MCP
+// The data below is fetched via Sentry MCP during development
+// In production, you would use the Sentry SDK or API directly
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -16,8 +16,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Real Sentry data from MCP query
-    // This represents actual issues from the tcs-goh organization
+    // Real Sentry data from MCP query (tcs-goh organization)
+    // This data was fetched using Sentry_search_issues tool
     const issues = [
       {
         id: "6416653583",
@@ -26,8 +26,8 @@ export async function GET(request: Request) {
         culprit: "breakApp(index)",
         level: "error" as const,
         status: "unresolved",
-        firstSeen: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-        lastSeen: new Date(Date.now() - 1000 * 60 * 4).toISOString(),
+        firstSeen: "2026-05-03T06:05:43.357Z",
+        lastSeen: "2026-05-03T06:05:43.000Z",
         count: 1,
         userCount: 0,
         permalink: "https://tcs-goh.sentry.io/issues/DEVOPS-AI-DEMO-1",
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ issues, org })
   } catch (error) {
-    console.error("[v0] Error fetching Sentry issues:", error)
+    console.error("[Sentry API] Error:", error)
     return NextResponse.json(
       { error: "Failed to fetch issues from Sentry" },
       { status: 500 }
