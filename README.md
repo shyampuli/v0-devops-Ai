@@ -1,35 +1,60 @@
-# v0-devops-Ai
+# DevOps AI
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+DevOps AI is an intelligent monitoring and debugging platform built with **Next.js** and **v0**.  
+It integrates **Sentry MCP (Model Context Protocol)** to fetch real-time production errors and combines it with AI-powered analysis to help developers quickly identify issues and apply fixes.
+
+
+## Live App
+
+**Try the app here:**  
+[https://your-app.vercel.app](https://devopsai.vercel.app/)
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A[Sentry (Real Errors)] --> B[Sentry MCP Server]
+    B --> C[DevOps AI App (Next.js + v0)]
+    C --> D[AI Engine (Gemini / LLM)]
+    D --> C
+    C --> E[User Dashboard UI]
+
+    subgraph User Interaction
+        E --> F[Select Issue]
+        F --> G[Ask AI]
+        G --> D
+    end
+---
+
+## Key Features
+
+- **Real-time Error Monitoring**  
+  Integrated with **Sentry MCP** to fetch live application errors and logs.
+
+- **AI-Powered Analysis**  
+  Automatically analyzes errors to provide:
+  - Root cause
+  - Fix suggestions
+  - Prevention strategies
+
+- **Secure Authentication**  
+  Google OAuth login for safe and seamless access.
+
+- **Modern UI/UX**  
+  Built using v0 with an interactive and responsive interface.
+
+- **Smart Debugging Workflow**  
+  Convert complex logs into meaningful, actionable insights.
+
+---
 
 ## Built with v0
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+This repository is connected to a **v0 project**, enabling rapid UI and feature development using natural language prompts.
+- Changes made in v0 are automatically pushed to this repository  
+- Every merge to `main` triggers automatic deployment  
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_T7QwxB69zxsweVbBCwLIWca4KS7p)
+---
 
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-## Learn More
-
-To learn more, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
-
-<a href="https://v0.app/chat/api/kiro/clone/shyampuli/v0-devops-Ai" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
