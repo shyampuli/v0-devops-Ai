@@ -7,14 +7,18 @@ import {
 } from "@/components/dashboard/sentry-issues-list"
 import { IssueDetailsPanel, type IssueDetails } from "@/components/dashboard/issue-details-panel"
 import { AIAnalysisModal } from "@/components/dashboard/ai-analysis-modal"
+import { Navbar } from "@/components/dashboard/navbar"
+import { LandingView } from "@/components/dashboard/landing-view"
 import { RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const SENTRY_ORG = "tcs-goh"
 
 export default function DashboardPage() {
+  const [currentView, setCurrentView] = useState<"landing" | "dashboard">("landing")
+  const [theme, setTheme] = useState<"light" | "dark">("dark")
   const [issues, setIssues] = useState<SentryIssue[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedIssue, setSelectedIssue] = useState<SentryIssue | null>(null)
   const [issueDetails, setIssueDetails] = useState<IssueDetails | null>(null)
@@ -23,6 +27,38 @@ export default function DashboardPage() {
   const [isAiLoading, setIsAiLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // Load theme from localStorage on mount
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("devops-theme") as "light" | "dark" | null
+    if (savedTheme) {
+      setTheme(savedTheme)
+      document.documentElement.classList.toggle("dark", savedTheme === "dark")
+    } else {
+      document.documentElement.classList.add("dark")
+    }
+  }, [])
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark"
+    setTheme(newTheme)
+    localStorage.setItem("devops-theme", newTheme)
+    document.documentElement.classList.toggle("dark", newTheme === "dark")
+  }
+
+  const handleNavigateHome = () => {
+    setCurrentView("landing")
+    setSelectedIssue(null)
+    setIssueDetails(null)
+    setAiContent(null)
+  }
+
+  const handleViewErrors = () => {
+    setCurrentView("dashboard")
+    if (issues.length === 0) {
+      fetchIssues()
+    }
+  }
 
   const fetchIssues = useCallback(async (showRefresh = false) => {
     if (showRefresh) {
@@ -47,10 +83,6 @@ export default function DashboardPage() {
       setIsRefreshing(false)
     }
   }, [])
-
-  useEffect(() => {
-    fetchIssues()
-  }, [fetchIssues])
 
   const handleSelectIssue = async (issue: SentryIssue) => {
     setSelectedIssue(issue)
@@ -89,27 +121,21 @@ export default function DashboardPage() {
   const handleFixWithAI = async () => {
     if (!issueDetails) return
 
-    // Open modal immediately to show loading state
     setIsModalOpen(true)
     setIsAiLoading(true)
     setAiContent(null)
 
-    // Extract proper source - fix "?(index)" by parsing from stack trace or culprit
     const extractSource = (): string => {
-      // Try to get function name from stack trace
       if (issueDetails.stackTrace) {
-        // Look for patterns like "at functionName" or "functionName@"
         const functionMatch = issueDetails.stackTrace.match(/(?:at\s+)?(\w+)(?:\s+\(|@)/)
         if (functionMatch && functionMatch[1] && functionMatch[1] !== "Object" && functionMatch[1] !== "Module") {
           return functionMatch[1]
         }
-        // Look for file:line pattern like "index.js:42"
         const fileMatch = issueDetails.stackTrace.match(/([a-zA-Z0-9_-]+\.[jt]sx?):?\d*/)
         if (fileMatch && fileMatch[1]) {
           return fileMatch[1]
         }
       }
-      // Fall back to culprit, but clean up "?(index)" patterns
       if (issueDetails.culprit) {
         const cleanCulprit = issueDetails.culprit.replace(/\?\(index\)/g, "").trim()
         if (cleanCulprit && cleanCulprit !== "?") {
@@ -119,11 +145,8 @@ export default function DashboardPage() {
       return "Unknown Source"
     }
 
-    // Build flat payload structure
     const errorMessage = issueDetails.title || "Unknown error"
-    const stackTrace = issueDetails.stackTrace && issueDetails.stackTrace.trim() 
-      ? issueDetails.stackTrace 
-      : errorMessage
+    const stackTrace = issueDetails.stackTrace?.trim() || errorMessage
     const source = extractSource()
     const environment = issueDetails.environment || "production"
 
@@ -134,9 +157,6 @@ export default function DashboardPage() {
       environment: environment,
     }
 
-
-
-    // Helper function to make the API call
     const callAI = async (): Promise<{ success: boolean; data?: string; error?: string }> => {
       try {
         const response = await fetch("/api/ai", {
@@ -166,10 +186,8 @@ export default function DashboardPage() {
       }
     }
 
-    // First attempt
     let result = await callAI()
 
-    // Retry once if first attempt fails
     if (!result.success) {
       await new Promise(resolve => setTimeout(resolve, 1000))
       result = await callAI()
@@ -186,53 +204,63 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="flex shrink-0 items-center justify-between border-b border-border bg-card px-8 py-5">
-        <div className="flex items-center gap-4">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-foreground">
-            <span className="text-sm font-semibold text-background">D</span>
-          </div>
-          <div>
-            <h1 className="text-base font-semibold tracking-tight text-foreground">
-              DevOps Dashboard
-            </h1>
-            <p className="text-xs text-muted-foreground">{SENTRY_ORG}</p>
-          </div>
-        </div>
-        <button
-          onClick={() => fetchIssues(true)}
-          disabled={isRefreshing}
-          className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-all hover:bg-muted disabled:opacity-50"
-        >
-          <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
-          Refresh
-        </button>
-      </header>
+    <div className="flex h-screen flex-col bg-black">
+      {/* Navbar */}
+      <Navbar
+        currentView={currentView}
+        onNavigateHome={handleNavigateHome}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
 
-      {/* Main Content - 2 Column Layout */}
-      <div className="grid min-h-0 flex-1 grid-cols-[300px_1fr] divide-x divide-border">
-        {/* Left Panel - Issues List (unchanged) */}
-        <div className="flex h-full flex-col overflow-hidden bg-card">
-          <SentryIssuesList
-            issues={issues}
-            selectedId={selectedIssue?.id ?? null}
-            onSelect={handleSelectIssue}
-            isLoading={isLoading}
-            error={error}
-          />
-        </div>
+      {/* Main Content */}
+      {currentView === "landing" ? (
+        <LandingView onViewErrors={handleViewErrors} />
+      ) : (
+        <div className="flex flex-1 flex-col overflow-hidden bg-background">
+          {/* Dashboard Header */}
+          <header className="flex shrink-0 items-center justify-between border-b border-border bg-card px-8 py-5">
+            <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-base font-semibold tracking-tight text-foreground">
+                  Error Dashboard
+                </h1>
+                <p className="text-xs text-muted-foreground">{SENTRY_ORG}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => fetchIssues(true)}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 rounded-xl bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground transition-all hover:bg-muted disabled:opacity-50"
+            >
+              <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} />
+              Refresh
+            </button>
+          </header>
 
-        {/* Right Panel - Issue Details (expanded) */}
-        <div className="flex h-full flex-col overflow-hidden bg-card">
-          <IssueDetailsPanel
-            issueDetails={issueDetails}
-            isLoading={isLoadingDetails}
-            onFixWithAI={handleFixWithAI}
-            isAnalyzing={isAiLoading}
-          />
+          {/* 2 Column Layout */}
+          <div className="grid min-h-0 flex-1 grid-cols-[300px_1fr] divide-x divide-border">
+            <div className="flex h-full flex-col overflow-hidden bg-card">
+              <SentryIssuesList
+                issues={issues}
+                selectedId={selectedIssue?.id ?? null}
+                onSelect={handleSelectIssue}
+                isLoading={isLoading}
+                error={error}
+              />
+            </div>
+
+            <div className="flex h-full flex-col overflow-hidden bg-card">
+              <IssueDetailsPanel
+                issueDetails={issueDetails}
+                isLoading={isLoadingDetails}
+                onFixWithAI={handleFixWithAI}
+                isAnalyzing={isAiLoading}
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* AI Analysis Modal */}
       <AIAnalysisModal
