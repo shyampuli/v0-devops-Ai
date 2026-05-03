@@ -41,7 +41,7 @@ Unlike traditional dashboards:
 👉 It acts like a **DevOps assistant**, not just a monitoring tool.
 
 
-## 🔗 Sentry MCP Integration
+## Sentry MCP Integration
 
 DevOps AI uses **Sentry MCP** to:
 
@@ -49,13 +49,13 @@ DevOps AI uses **Sentry MCP** to:
 - Provide structured issue details  
 - Enable AI to analyze **actual production failures**  
 
-👉 This ensures:
+This ensures:
 - No fake data  
 - Real-world debugging scenarios  
 - Accurate AI insights  
 
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend:** Next.js (App Router)  
 - **UI:** v0 (Vercel AI UI builder)  
