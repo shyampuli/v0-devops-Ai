@@ -30,7 +30,39 @@ It integrates **Sentry MCP (Model Context Protocol)** to fetch real-time product
 - **Smart Debugging Workflow**  
   Convert complex logs into meaningful, actionable insights.
 
----
+
+## 🧩 What Makes This Unique
+
+Unlike traditional dashboards:
+
+❌ Just shows logs  
+✅ DevOps AI explains logs  
+
+👉 It acts like a **DevOps assistant**, not just a monitoring tool.
+
+
+## 🔗 Sentry MCP Integration
+
+DevOps AI uses **Sentry MCP** to:
+
+- Fetch real-time error data from Sentry  
+- Provide structured issue details  
+- Enable AI to analyze **actual production failures**  
+
+👉 This ensures:
+- No fake data  
+- Real-world debugging scenarios  
+- Accurate AI insights  
+
+
+## 🛠️ Tech Stack
+
+- **Frontend:** Next.js (App Router)  
+- **UI:** v0 (Vercel AI UI builder)  
+- **Auth:** Google OAuth (NextAuth)  
+- **Monitoring:** Sentry + MCP  
+- **AI:** LLM (Gemini / OpenAI)  
+
 
 ## Built with v0
 
@@ -38,5 +70,4 @@ This repository is connected to a **v0 project**, enabling rapid UI and feature 
 - Changes made in v0 are automatically pushed to this repository  
 - Every merge to `main` triggers automatic deployment  
 
----
 
