@@ -1,3 +1,5 @@
+import { GoogleGenerativeAI } from "@google/generative-ai"
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -22,6 +24,18 @@ export async function POST(req: Request) {
     if (!apiKey) {
       return Response.json({ error: "GOOGLE_API_KEY not configured" }, { status: 500 })
     }
+
+    // Initialize Google Generative AI with official SDK
+    const genAI = new GoogleGenerativeAI(apiKey)
+    
+    // Use gemini-1.5-flash-latest as specified
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash-latest",
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 2000,
+      },
+    })
 
     const systemPrompt = `You are a senior DevOps engineer and SRE.
 
@@ -64,51 +78,18 @@ ${stackTrace}
 
 Provide detailed technical analysis.`
 
-    // Call Google Gemini API directly
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: `${systemPrompt}\n\n${userPrompt}`,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.2,
-            maxOutputTokens: 2000,
-          },
-        }),
-      }
-    )
+    // Combine system and user prompts for Gemini
+    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      const errorDetail = errorData.error?.message || response.statusText || "Unknown error"
-      console.error("[Gemini API Error]:", errorDetail)
-      return Response.json(
-        { error: `Gemini API error: ${errorDetail}` },
-        { status: response.status }
-      )
-    }
-
-    const data = await response.json()
-    
-    // Extract text from Gemini response structure
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+    // Call generateContent with the official SDK
+    const result = await model.generateContent(fullPrompt)
+    const response = result.response
+    const text = response.text()
 
     if (!text || text.trim() === "") {
-      const finishReason = data.candidates?.[0]?.finishReason
-      if (finishReason === "SAFETY") {
+      // Check for safety blocking
+      const candidate = response.candidates?.[0]
+      if (candidate?.finishReason === "SAFETY") {
         return Response.json({ error: "Content blocked by safety filters" }, { status: 400 })
       }
       return Response.json({ error: "Empty response from Gemini" }, { status: 500 })
@@ -116,10 +97,10 @@ Provide detailed technical analysis.`
 
     return Response.json({ analysis: text })
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error"
-    console.error("[Gemini Analysis Error]:", errorMessage)
+    const errorMsg = error instanceof Error ? error.message : "Unknown error"
+    console.error("[Gemini Analysis Error]:", errorMsg)
     return Response.json(
-      { error: `Analysis failed: ${errorMessage}` },
+      { error: `Analysis failed: ${errorMsg}` },
       { status: 500 }
     )
   }
