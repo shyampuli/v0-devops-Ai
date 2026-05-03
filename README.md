@@ -26,6 +26,7 @@ flowchart LR
         F --> G[Ask AI]
         G --> D
     end
+```
 ---
 
 ## Key Features
