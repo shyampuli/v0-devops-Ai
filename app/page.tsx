@@ -6,7 +6,7 @@ import {
   type SentryIssue,
 } from "@/components/dashboard/sentry-issues-list"
 import { IssueDetailsPanel, type IssueDetails } from "@/components/dashboard/issue-details-panel"
-import { AIAssistantPanel } from "@/components/dashboard/ai-assistant-panel"
+import { AIAnalysisModal } from "@/components/dashboard/ai-analysis-modal"
 import { RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [aiContent, setAiContent] = useState<string | null>(null)
   const [isAiLoading, setIsAiLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const fetchIssues = useCallback(async (showRefresh = false) => {
     if (showRefresh) {
@@ -88,6 +89,8 @@ export default function DashboardPage() {
   const handleFixWithAI = async () => {
     if (!issueDetails) return
 
+    // Open modal immediately to show loading state
+    setIsModalOpen(true)
     setIsAiLoading(true)
     setAiContent(null)
 
@@ -116,7 +119,7 @@ export default function DashboardPage() {
       setAiContent(data.analysis)
     } catch {
       setAiContent(
-        "Problem:\nFailed to analyze the error.\n\nCause:\nThe AI service may be temporarily unavailable.\n\nFix:\nCheck your network connection and try again.\n\nPrevention:\nEnsure stable connectivity to AI services."
+        "Problem:\nFailed to analyze the error due to a service interruption.\n\nCause:\nThe AI service may be temporarily unavailable or there was a network timeout.\n\nFix:\n1. Check your network connection\n2. Retry the analysis\n3. If the issue persists, check the API endpoint status\n\nPrevention:\nImplement retry logic with exponential backoff for AI service calls."
       )
     } finally {
       setIsAiLoading(false)
@@ -126,7 +129,7 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <header className="flex items-center justify-between bg-card px-8 py-5">
+      <header className="flex shrink-0 items-center justify-between border-b border-border bg-card px-8 py-5">
         <div className="flex items-center gap-4">
           <div className="flex size-9 items-center justify-center rounded-xl bg-foreground">
             <span className="text-sm font-semibold text-background">D</span>
@@ -148,9 +151,9 @@ export default function DashboardPage() {
         </button>
       </header>
 
-      {/* Main Content - 3 Column Grid */}
-      <div className="grid min-h-0 flex-1 grid-cols-[300px_1fr_360px] gap-px bg-border">
-        {/* Left Panel - Issues List */}
+      {/* Main Content - 2 Column Layout */}
+      <div className="grid min-h-0 flex-1 grid-cols-[300px_1fr] divide-x divide-border">
+        {/* Left Panel - Issues List (unchanged) */}
         <div className="flex h-full flex-col overflow-hidden bg-card">
           <SentryIssuesList
             issues={issues}
@@ -161,7 +164,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Center Panel - Issue Details */}
+        {/* Right Panel - Issue Details (expanded) */}
         <div className="flex h-full flex-col overflow-hidden bg-card">
           <IssueDetailsPanel
             issueDetails={issueDetails}
@@ -170,12 +173,16 @@ export default function DashboardPage() {
             isAnalyzing={isAiLoading}
           />
         </div>
-
-        {/* Right Panel - AI Assistant */}
-        <div className="flex h-full flex-col overflow-hidden bg-card">
-          <AIAssistantPanel content={aiContent} isLoading={isAiLoading} />
-        </div>
       </div>
+
+      {/* AI Analysis Modal */}
+      <AIAnalysisModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        content={aiContent}
+        isLoading={isAiLoading}
+        issueTitle={issueDetails?.title}
+      />
     </div>
   )
 }

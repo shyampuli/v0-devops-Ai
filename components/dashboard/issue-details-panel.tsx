@@ -142,12 +142,12 @@ export function IssueDetailsPanel({
 
           {/* Stack Trace */}
           {stackLines.length > 0 && (
-            <div className="max-w-full">
+            <div>
               <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Stack Trace
               </h3>
               <div className="overflow-hidden rounded-2xl border border-border bg-muted/30">
-                <div className="max-w-full overflow-x-auto p-4">
+                <div className="max-h-[400px] overflow-auto p-4">
                   <pre className="font-mono text-xs leading-relaxed">
                     {stackLines.map((line, index) => (
                       <div
@@ -159,7 +159,7 @@ export function IssueDetailsPanel({
                             : "text-muted-foreground"
                         )}
                       >
-                        <span className="mr-4 inline-block w-5 shrink-0 text-right opacity-40">
+                        <span className="mr-4 inline-block w-6 shrink-0 text-right tabular-nums opacity-40">
                           {index + 1}
                         </span>
                         {line || " "}

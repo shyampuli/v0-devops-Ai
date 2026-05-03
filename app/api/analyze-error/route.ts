@@ -7,47 +7,65 @@ export async function POST(req: Request) {
     return Response.json({ error: "No issue data provided" }, { status: 400 })
   }
 
-  const prompt = `You are a senior DevOps engineer analyzing a production error from Sentry. 
-Analyze the following error and provide a structured response.
+  const prompt = `You are a senior DevOps engineer with 15+ years of experience debugging production systems. You're analyzing a critical error from Sentry that needs immediate attention.
 
-ERROR DETAILS:
+CONTEXT: This is a production environment. Your analysis must be precise, actionable, and based on real engineering experience.
+
+=== ERROR DETAILS ===
 Title: ${issueData.title}
 Culprit: ${issueData.culprit}
-Level: ${issueData.level}
+Severity: ${issueData.level}
 Platform: ${issueData.platform || "unknown"}
 Environment: ${issueData.environment || "production"}
 
-STACK TRACE:
+=== STACK TRACE ===
 ${issueData.stackTrace || "No stack trace available"}
 
-CONTEXT:
+=== ADDITIONAL CONTEXT ===
 ${issueData.context || "No additional context"}
 
-TAGS:
+=== TAGS ===
 ${issueData.tags || "No tags"}
 
-Provide your analysis in EXACTLY this format (use these exact headers):
+=== YOUR ANALYSIS ===
+Provide a DETAILED, production-grade analysis. Think like you're explaining this to another senior engineer who needs to fix this NOW.
+
+Use EXACTLY this format:
 
 Problem:
-[One sentence describing what the error is]
+Clearly explain what is happening in technical terms. Reference the specific error type, the component/function involved, and the observable symptoms. Do NOT be vague - name the actual error and what it means.
 
 Cause:
-[One to two sentences explaining the root cause]
+Perform root cause analysis. Consider:
+- What conditions trigger this error?
+- Is this a code bug, configuration issue, or infrastructure problem?
+- Are there race conditions, null pointer issues, or dependency failures?
+- What is the most likely scenario based on the stack trace?
+Be specific. If the stack trace points to a specific file/line, mention it.
 
 Fix:
-[Numbered steps to fix the issue - be specific and actionable]
+Provide step-by-step actionable solution:
+1. Immediate mitigation (if applicable)
+2. Code-level fix with specific guidance
+3. How to verify the fix worked
+4. Any rollback considerations
+Include code snippets or configuration changes if relevant.
 
 Prevention:
-[One to two sentences on how to prevent this in the future]
+Recommend engineering best practices:
+- What monitoring/alerting should be added?
+- What tests would catch this in CI?
+- Are there architectural improvements to prevent this class of error?
+- What safeguards or validation should be implemented?
 
-Be concise and engineering-focused.`
+Remember: No vague advice. No generic responses. Be the senior engineer this team needs.`
 
   try {
     const { text } = await generateText({
       model: "openai/gpt-4o-mini",
       prompt,
-      maxOutputTokens: 1000,
-      temperature: 0.3,
+      maxOutputTokens: 2000,
+      temperature: 0.2,
     })
 
     return Response.json({ analysis: text })
