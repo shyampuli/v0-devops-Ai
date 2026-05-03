@@ -129,14 +129,14 @@ export function SentryIssuesList({
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-6 py-5">
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex shrink-0 items-center justify-between px-6 py-5">
         <h2 className="text-sm font-semibold text-foreground">Issues</h2>
         <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
           {issues.length}
         </span>
       </div>
-      <div className="flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
         <div className="space-y-1 px-3 pb-4">
           {issues.map((issue) => (
             <button

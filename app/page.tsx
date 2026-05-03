@@ -148,10 +148,10 @@ export default function DashboardPage() {
         </button>
       </header>
 
-      {/* Main Content */}
-      <div className="grid flex-1 grid-cols-[300px_1fr_360px] gap-px overflow-hidden bg-border">
-        {/* Left Panel */}
-        <div className="bg-card">
+      {/* Main Content - 3 Column Grid */}
+      <div className="grid min-h-0 flex-1 grid-cols-[300px_1fr_360px] gap-px bg-border">
+        {/* Left Panel - Issues List */}
+        <div className="flex h-full flex-col overflow-hidden bg-card">
           <SentryIssuesList
             issues={issues}
             selectedId={selectedIssue?.id ?? null}
@@ -161,8 +161,8 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Center Panel */}
-        <div className="bg-card">
+        {/* Center Panel - Issue Details */}
+        <div className="flex h-full flex-col overflow-hidden bg-card">
           <IssueDetailsPanel
             issueDetails={issueDetails}
             isLoading={isLoadingDetails}
@@ -171,8 +171,8 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Right Panel */}
-        <div className="bg-card">
+        {/* Right Panel - AI Assistant */}
+        <div className="flex h-full flex-col overflow-hidden bg-card">
           <AIAssistantPanel content={aiContent} isLoading={isAiLoading} />
         </div>
       </div>

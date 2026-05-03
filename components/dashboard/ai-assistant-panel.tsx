@@ -1,6 +1,5 @@
 "use client"
 
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sparkles, AlertCircle, Search, Wrench, Shield } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -100,16 +99,19 @@ export function AIAssistantPanel({
   const parsed = content ? parseAnalysis(content) : null
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 px-6 py-5">
-        <Sparkles className="size-4 text-muted-foreground" />
-        <h2 className="text-sm font-semibold text-foreground">AI Assistant</h2>
+      <div className="shrink-0 px-6 py-5">
+        <div className="flex items-center gap-2">
+          <Sparkles className="size-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold text-foreground">AI Assistant</h2>
+        </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-auto">
         {isLoading ? (
-          <div className="flex h-[calc(100%-80px)] items-center justify-center px-6">
+          <div className="flex h-full items-center justify-center px-6">
             <div className="text-center">
               <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-muted">
                 <div className="size-5 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-foreground" />
@@ -157,12 +159,12 @@ export function AIAssistantPanel({
           </div>
         ) : content ? (
           <div className="px-6 pb-8">
-            <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+            <div className="whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
               {content}
             </div>
           </div>
         ) : (
-          <div className="flex h-[calc(100%-80px)] items-center justify-center px-6">
+          <div className="flex h-full items-center justify-center px-6">
             <div className="text-center">
               <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-muted">
                 <Sparkles className="size-6 text-muted-foreground" />
@@ -174,7 +176,7 @@ export function AIAssistantPanel({
             </div>
           </div>
         )}
-      </ScrollArea>
+      </div>
     </div>
   )
 }

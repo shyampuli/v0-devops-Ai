@@ -1,6 +1,5 @@
 "use client"
 
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sparkles, FileCode, Server, Tag, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -81,42 +80,41 @@ export function IssueDetailsPanel({
     : []
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header with Fix with AI button */}
-      <div className="flex items-start justify-between gap-4 px-6 py-5">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-foreground">Details</h2>
-            <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              {issueDetails.shortId}
-            </span>
-          </div>
+    <div className="flex h-full flex-col overflow-hidden">
+      {/* Header */}
+      <div className="shrink-0 px-6 py-5">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-foreground">Details</h2>
+          <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+            {issueDetails.shortId}
+          </span>
         </div>
-        
-        {/* Primary Fix with AI Button - Always Visible */}
-        <button
-          onClick={onFixWithAI}
-          disabled={isAnalyzing}
-          className={cn(
-            "flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all",
-            "bg-foreground text-background",
-            "hover:opacity-90 active:scale-[0.98]",
-            "disabled:opacity-50 disabled:cursor-not-allowed"
-          )}
-        >
-          <Sparkles className={cn("size-4", isAnalyzing && "animate-pulse")} />
-          {isAnalyzing ? "Analyzing..." : "Fix with AI"}
-        </button>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="space-y-6 px-6 pb-8">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-auto px-6 pb-8">
+        <div className="space-y-6">
           {/* Error Title Card */}
           <div className="rounded-2xl border border-orange-200 bg-orange-50 p-5">
-            <p className="font-mono text-sm font-medium leading-relaxed text-orange-900">
+            <p className="break-words font-mono text-sm font-medium leading-relaxed text-orange-900">
               {issueDetails.title}
             </p>
           </div>
+
+          {/* Fix with AI Button - Directly Below Error Message */}
+          <button
+            onClick={onFixWithAI}
+            disabled={isAnalyzing}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all",
+              "bg-foreground text-background",
+              "hover:opacity-90 active:scale-[0.99]",
+              "disabled:opacity-50 disabled:cursor-not-allowed"
+            )}
+          >
+            <Sparkles className={cn("size-4", isAnalyzing && "animate-pulse")} />
+            {isAnalyzing ? "Analyzing..." : "Fix with AI"}
+          </button>
 
           {/* Metadata Grid */}
           <div className="grid grid-cols-2 gap-4">
@@ -144,29 +142,31 @@ export function IssueDetailsPanel({
 
           {/* Stack Trace */}
           {stackLines.length > 0 && (
-            <div>
+            <div className="max-w-full">
               <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Stack Trace
               </h3>
               <div className="overflow-hidden rounded-2xl border border-border bg-muted/30">
-                <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed">
-                  {stackLines.map((line, index) => (
-                    <div
-                      key={index}
-                      className={cn(
-                        "px-2 py-0.5",
-                        isErrorLine(line)
-                          ? "rounded bg-orange-100 text-orange-800"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      <span className="mr-4 inline-block w-5 text-right opacity-40">
-                        {index + 1}
-                      </span>
-                      {line || " "}
-                    </div>
-                  ))}
-                </pre>
+                <div className="max-w-full overflow-x-auto p-4">
+                  <pre className="font-mono text-xs leading-relaxed">
+                    {stackLines.map((line, index) => (
+                      <div
+                        key={index}
+                        className={cn(
+                          "whitespace-pre-wrap break-words px-2 py-0.5",
+                          isErrorLine(line)
+                            ? "rounded bg-orange-100 text-orange-800"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        <span className="mr-4 inline-block w-5 shrink-0 text-right opacity-40">
+                          {index + 1}
+                        </span>
+                        {line || " "}
+                      </div>
+                    ))}
+                  </pre>
+                </div>
               </div>
             </div>
           )}
