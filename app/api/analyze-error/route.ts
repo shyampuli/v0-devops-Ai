@@ -1,5 +1,3 @@
-import { generateText } from "ai"
-
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -19,12 +17,11 @@ export async function POST(req: Request) {
       return Response.json({ error: "Missing stack trace" }, { status: 400 })
     }
 
-    // Log what we're sending to AI
-    console.log("[v0] AI Request:", {
-      error: errorMessage,
-      source: source,
-      stackTraceLength: stackTrace.length,
-    })
+    // Check for API key
+    const apiKey = process.env.GOOGLE_API_KEY
+    if (!apiKey) {
+      return Response.json({ error: "GOOGLE_API_KEY not configured" }, { status: 500 })
+    }
 
     const systemPrompt = `You are a senior DevOps engineer and SRE.
 
@@ -67,26 +64,62 @@ ${stackTrace}
 
 Provide detailed technical analysis.`
 
-    const { text } = await generateText({
-      model: "openai/gpt-4o-mini",
-      system: systemPrompt,
-      prompt: userPrompt,
-      maxOutputTokens: 2000,
-      temperature: 0.2,
-    })
+    // Call Google Gemini API directly
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: `${systemPrompt}\n\n${userPrompt}`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 2000,
+          },
+        }),
+      }
+    )
 
-    if (!text || text.trim() === "") {
-      return Response.json({ error: "Empty response from AI" }, { status: 500 })
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      const errorDetail = errorData.error?.message || response.statusText || "Unknown error"
+      console.error("[Gemini API Error]:", errorDetail)
+      return Response.json(
+        { error: `Gemini API error: ${errorDetail}` },
+        { status: response.status }
+      )
     }
 
-    console.log("[v0] AI Response received, length:", text.length)
+    const data = await response.json()
+    
+    // Extract text from Gemini response structure
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+
+    if (!text || text.trim() === "") {
+      const finishReason = data.candidates?.[0]?.finishReason
+      if (finishReason === "SAFETY") {
+        return Response.json({ error: "Content blocked by safety filters" }, { status: 400 })
+      }
+      return Response.json({ error: "Empty response from Gemini" }, { status: 500 })
+    }
 
     return Response.json({ analysis: text })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
-    console.error("[v0] AI analysis error:", errorMessage)
+    console.error("[Gemini Analysis Error]:", errorMessage)
     return Response.json(
-      { error: `AI service error: ${errorMessage}` },
+      { error: `Analysis failed: ${errorMessage}` },
       { status: 500 }
     )
   }
